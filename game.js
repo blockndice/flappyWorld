@@ -22,15 +22,16 @@ canvas.height = H;
 // ─────────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────────
-let bird, pipes, score, best, state, frame, groundX, coinTick;
+let bird, pipes, score, best, state, frame, groundX, coinTick, countdown;
 
 function init() {
   bird    = { x: 90, y: H / 2, vy: 0, rot: 0 };
   pipes   = [];
   score   = 0;
-  state   = 'waiting'; // waiting | playing | dead
-  frame   = 0;
-  groundX = 0;
+  state     = 'waiting'; // waiting | countdown | playing | dead
+  frame     = 0;
+  groundX   = 0;
+  countdown = 0;
   // coinTick n'est pas réinitialisé : la rotation continue sans saut visuel
 }
 
@@ -173,7 +174,7 @@ function sprCoinUI(x, y) {
   fill.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
   ctx.fillStyle = '#fff3a0';
   shine.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
-  ctx.fillStyle = '#a07020';
+  ctx.fillStyle = '#d4a820';
   shadow.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
 }
 
@@ -221,16 +222,30 @@ function spawnPipe() {
 }
 
 function flap() {
-  if (state === 'dead') {
-    init();
-    state = 'playing';
+  if (state === 'dead') { init(); state = 'countdown'; bird.vy = FLAP_VY; return; }
+  if (state === 'countdown') return; // ignoré pendant le décompte
+  if (state === 'waiting') {
+    state     = 'countdown';
+    countdown = 0;
+    bird.vy   = FLAP_VY; // premier battement immédiat
     return;
   }
-  if (state === 'waiting') state = 'playing';
   bird.vy = FLAP_VY;
 }
 
 function update() {
+  if (state === 'countdown') {
+    countdown++;
+    if (countdown % 37 === 0) bird.vy = FLAP_VY; // battement auto toutes les 30 frames
+    bird.vy += GRAVITY;
+    bird.y  += bird.vy;
+    bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y, H - GROUND_H - BIRD_H / 2 - 8));
+    bird.rot = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
+    groundX  = (groundX - PIPE_SPEED) % 20;
+    if (countdown >= 6 * 40) { state = 'playing'; frame = 0; }
+    return;
+  }
+
   if (state !== 'playing') return;
 
   frame++;
@@ -307,6 +322,17 @@ function roundRect(x, y, w, h, r, fill) {
 function drawUI() {
   ctx.textAlign = 'center';
 
+  if (state === 'countdown') {
+    const idx   = Math.min(Math.floor(countdown / 40), 5);
+    const label = idx < 5 ? String(5 - idx) : 'Go !';
+    ctx.font        = 'bold 72px monospace';
+    ctx.lineWidth   = 7;
+    ctx.strokeStyle = '#00000099';
+    ctx.strokeText(label, W / 2, H / 2 + 24);
+    ctx.fillStyle   = idx === 5 ? '#44ff88' : '#ffffff';
+    ctx.fillText(label, W / 2, H / 2 + 24);
+  }
+
   if (state === 'waiting') {
     roundRect(W/2 - 110, H/2 - 55, 220, 90, 8, 'rgba(0,0,0,0.45)');
     ctx.fillStyle = '#ffe033';
@@ -334,21 +360,14 @@ function drawUI() {
     ctx.font = 'bold 24px monospace';
     ctx.fillText('GAME OVER', W/2, H/2 - 36);
 
-    // lignes pièces alignées à gauche — espace pour 3 chiffres
-    ctx.textAlign = 'left';
-    sprCoinUI(W/2 - 58, H/2 + 4);
+    sprCoinUI(W/2 - 30, H/2 + 10);
     ctx.fillStyle = '#ffffff';
     ctx.font = '16px monospace';
-    ctx.fillText(`× ${score}`, W/2 - 44, H/2 + 10);
-    sprCoinUI(W/2 - 58, H/2 + 28);
-    ctx.fillStyle = '#ffe033';
-    ctx.font = '14px monospace';
-    ctx.fillText(`× ${best || 0}  record`, W/2 - 44, H/2 + 33);
+    ctx.fillText(`× ${score}`, W/2 + 4, H/2 + 16);
 
-    ctx.textAlign = 'center';
     ctx.fillStyle = '#aaaaaa';
     ctx.font = '12px monospace';
-    ctx.fillText('Cliquer pour rejouer', W/2, H/2 + 52);
+    ctx.fillText('Cliquer pour rejouer', W/2, H/2 + 46);
   }
 
   ctx.textAlign = 'left';
