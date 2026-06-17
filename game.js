@@ -247,7 +247,35 @@ function update() {
   if (state === 'intro2') {
     intro2Frame++;
     groundX = (groundX - PIPE_SPEED) % 20;
-    if (intro2Frame >= 280) { state = 'countdown'; countdown = 0; bird.vy = FLAP_VY; }
+
+    const T1  = 120;
+    const t   = intro2Frame;
+    // position x du leader à T1 (même formule que drawUI, ep=1)
+    const cx0 = -50 + 1 * (W * 0.62 + 50);
+
+    if (t <= T1) {
+      // bird suit la formation juste derrière le leader
+      const p  = t / T1;
+      const ep = p < 0.5 ? 2*p*p : -1 + (4 - 2*p)*p;
+      const lcx = -50 + ep * (W * 0.62 + 50);
+      const lcy = H * 0.42 + Math.sin(t * 0.09) * 22;
+      bird.x   = lcx - 22;
+      bird.y   = lcy + Math.sin(t * 0.09 + 1.5) * 14;
+      bird.vy  = 0;
+      bird.rot = -0.15;
+    } else {
+      // dérive douce vers x=90
+      const p2  = (t - T1) / 160;
+      const bx0 = cx0 - 22;
+      bird.x = bx0 + (90 - bx0) * Math.min(p2, 1);
+      // même physique que le décompte
+      if ((t - T1) % 37 === 20) bird.vy = FLAP_VY;
+      bird.vy += GRAVITY;
+      bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y + bird.vy, H - GROUND_H - BIRD_H / 2 - 8));
+      bird.rot = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
+    }
+
+    if (t >= 280) { bird.x = 90; state = 'countdown'; countdown = 0; bird.vy = FLAP_VY; }
     return;
   }
 
@@ -460,7 +488,7 @@ function render() {
     if (!p.collected) sprCoin(p.x + PIPE_W / 2, p.coinY);
   });
   sprGround(groundX);
-  if (state !== 'intro2') sprBird(bird.x, bird.y, bird.rot);
+  sprBird(bird.x, bird.y, bird.rot);
   drawUI();
 }
 

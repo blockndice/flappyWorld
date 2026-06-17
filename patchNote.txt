@@ -3,6 +3,7 @@ alpha
 v0.00.1 = Prototype + UI
 v0.00.2 = décompte avec la partie
 v0.01.0 = Intro groupe d'oiseau
+v0.01.1 = amélioration intro
 
 ** next step **
 affichage nouveau record dans pop-up
