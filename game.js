@@ -248,40 +248,40 @@ function update() {
     intro2Frame++;
     groundX = (groundX - PIPE_SPEED) % 20;
 
-    const T1  = 120;
-    const t   = intro2Frame;
-    // position x du leader à T1 (même formule que drawUI, ep=1)
-    const cx0 = -50 + 1 * (W * 0.62 + 50);
+    const T1       = 120; // fin traversée gauche→droite
+    const T2       = 40;  // frames où le bird suit l'envol avant de décrocher
+    const t        = intro2Frame;
+    const cx0      = -50 + 1 * (W * 0.62 + 50);
+    const bxDetach = cx0 - 22 + T2 * 1.5; // x réel au moment exact du décrochage
 
-    if (t <= T1) {
-      // bird suit la formation juste derrière le leader
-      const p  = t / T1;
-      const ep = p < 0.5 ? 2*p*p : -1 + (4 - 2*p)*p;
+    if (t <= T1 + T2) {
+      // bird suit la formation puis le début de l'envol
+      const p   = Math.min(t, T1) / T1;
+      const ep  = p < 0.5 ? 2*p*p : -1 + (4 - 2*p)*p;
       const lcx = -50 + ep * (W * 0.62 + 50);
       const lcy = H * 0.42 + Math.sin(t * 0.09) * 22;
-      bird.x   = lcx - 22;
-      bird.y   = lcy + Math.sin(t * 0.09 + 1.5) * 14;
+      const swoop = t > T1 ? ((t - T1) / 85) ** 2 * 430 : 0;
+      bird.x   = t <= T1 ? lcx - 22 : cx0 - 22 + (t - T1) * 1.5;
+      bird.y   = lcy + Math.sin(t * 0.09 + 1.5) * 14 - swoop;
       bird.vy  = 0;
-      bird.rot = -0.15;
+      bird.rot = t > T1 ? -0.15 - ((t - T1) / T2) * 0.4 : -0.15;
     } else {
-      // dérive douce vers x=90
-      const p2  = (t - T1) / 160;
-      const bx0 = cx0 - 22;
-      bird.x = bx0 + (90 - bx0) * Math.min(p2, 1);
-      // même physique que le décompte
-      if ((t - T1) % 37 === 20) bird.vy = FLAP_VY;
+      // décrochage : drift de bxDetach vers x=90, auto-flap
+      const elapsed = t - T1 - T2;
+      bird.x = bxDetach + (90 - bxDetach) * Math.min(elapsed / 120, 1);
+      if (elapsed % 37 === 30) bird.vy = FLAP_VY;
       bird.vy += GRAVITY;
       bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y + bird.vy, H - GROUND_H - BIRD_H / 2 - 8));
       bird.rot = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
     }
 
-    if (t >= 280) { bird.x = 90; state = 'countdown'; countdown = 0; bird.vy = FLAP_VY; }
+    if (t >= 280) { bird.x = 90; bird.vy = FLAP_VY; state = 'countdown'; countdown = 0; }
     return;
   }
 
   if (state === 'countdown') {
     countdown++;
-    if (countdown % 37 === 0) bird.vy = FLAP_VY; // battement auto toutes les 30 frames
+    if (countdown % 37 === 0) bird.vy = FLAP_VY;
     bird.vy += GRAVITY;
     bird.y  += bird.vy;
     bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y, H - GROUND_H - BIRD_H / 2 - 8));
