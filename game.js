@@ -22,16 +22,17 @@ canvas.height = H;
 // ─────────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────────
-let bird, pipes, score, best, state, frame, groundX, coinTick, countdown;
+let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame;
 
 function init() {
   bird    = { x: 90, y: H / 2, vy: 0, rot: 0 };
   pipes   = [];
   score   = 0;
-  state     = 'waiting'; // waiting | countdown | playing | dead
-  frame     = 0;
-  groundX   = 0;
-  countdown = 0;
+  state       = 'waiting'; // intro1 | waiting | intro2 | countdown | playing | dead
+  frame       = 0;
+  groundX     = 0;
+  countdown   = 0;
+  intro2Frame = 0;
   // coinTick n'est pas réinitialisé : la rotation continue sans saut visuel
 }
 
@@ -79,18 +80,31 @@ function sprGround(offsetX) {
 }
 
 /** BIRD — rectangle pixel avec oeil et bec */
-function sprBird(x, y, rot) {
+// pal : 0=jaune 1=vert 2=rouge 3=rose 4=bleu 5=violet
+const BIRD_PALS = [
+  ['#f5d600','#fff3a0','#d4a800'], // 0 jaune
+  ['#4caf50','#a5d6a7','#2e7d32'], // 1 vert
+  ['#f44336','#ffcdd2','#b71c1c'], // 2 rouge
+  ['#e91e63','#f8bbd0','#880e4f'], // 3 rose
+  ['#2196f3','#bbdefb','#0d47a1'], // 4 bleu
+  ['#9c27b0','#e1bee7','#4a148c'], // 5 violet
+  ['#ff8c00','#ffe0b2','#e65100'], // 6 orange
+  ['#ff7043','#ffccbc','#bf360c'], // 7 corail
+];
+
+function sprBird(x, y, rot, pal = 0) {
+  const [body, light, dark] = BIRD_PALS[pal % BIRD_PALS.length];
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rot);
 
-  ctx.fillStyle = '#f5d600';
+  ctx.fillStyle = body;
   ctx.fillRect(-BIRD_W / 2, -BIRD_H / 2, BIRD_W, BIRD_H);
 
-  ctx.fillStyle = '#fff3a0';
+  ctx.fillStyle = light;
   ctx.fillRect(-BIRD_W / 2 + 4, BIRD_H / 2 - 8, BIRD_W - 10, 6);
 
-  ctx.fillStyle = '#d4a800';
+  ctx.fillStyle = dark;
   ctx.fillRect(-BIRD_W / 2, 0, 10, 7);
 
   ctx.fillStyle = '#ffffff';
@@ -222,18 +236,21 @@ function spawnPipe() {
 }
 
 function flap() {
-  if (state === 'dead') { init(); state = 'countdown'; bird.vy = FLAP_VY; return; }
-  if (state === 'countdown') return; // ignoré pendant le décompte
-  if (state === 'waiting') {
-    state     = 'countdown';
-    countdown = 0;
-    bird.vy   = FLAP_VY; // premier battement immédiat
-    return;
-  }
+  if (state === 'intro2')    return; // ignoré pendant l'intro2
+  if (state === 'dead')      { init(); state = 'countdown'; bird.vy = FLAP_VY; return; }
+  if (state === 'countdown') return;
+  if (state === 'waiting')   { state = 'intro2'; intro2Frame = 0; return; }
   bird.vy = FLAP_VY;
 }
 
 function update() {
+  if (state === 'intro2') {
+    intro2Frame++;
+    groundX = (groundX - PIPE_SPEED) % 20;
+    if (intro2Frame >= 280) { state = 'countdown'; countdown = 0; bird.vy = FLAP_VY; }
+    return;
+  }
+
   if (state === 'countdown') {
     countdown++;
     if (countdown % 37 === 0) bird.vy = FLAP_VY; // battement auto toutes les 30 frames
@@ -322,6 +339,65 @@ function roundRect(x, y, w, h, r, fill) {
 function drawUI() {
   ctx.textAlign = 'center';
 
+  if (state === 'intro2') {
+    // [offsetX, offsetY, palette] — 0=jaune 1=vert 4=bleu 6=orange 7=corail
+    const flock = [
+      [   0,   0, 1],
+      [ -30,  16, 0],
+      [ -55,  -7, 0],
+      [ -82,  22, 0],
+      [ -48, -22, 7],
+      [ -75,  38, 4],
+      [-108,   6, 0],
+      [ -96, -18, 0],
+      [-132,  28, 0],
+      [-158,   4, 6],
+    ];
+    const t  = intro2Frame;
+    const T1 = 120; // frame de transition traversée → envol
+
+    // position exacte du leader à T1 — sert de point de départ de la phase 2
+    const cx0 = -50 + 1 * (W * 0.62 + 50);              // ease-in-out vaut 1 à p=1
+    const cy0 = H * 0.42 + Math.sin(T1 * 0.09) * 22;
+
+    let cx, cy, rot;
+    if (t <= T1) {
+      const p  = t / T1;
+      const ep = p < 0.5 ? 2*p*p : -1 + (4 - 2*p)*p;   // ease-in-out
+      cx  = -50 + ep * (W * 0.62 + 50);
+      cy  = H * 0.42 + Math.sin(t * 0.09) * 22;
+      rot = -0.15;
+    } else {
+      const p = (t - T1) / 85;
+      cx  = cx0 + p * 130;                               // continue vers la droite
+      cy  = cy0 - p * p * 430;                           // monte en accélérant
+      rot = -0.15 - p * 0.75;
+    }
+
+    flock.forEach(([ox, oy, pal], i) => {
+      const bx = cx + ox;
+      const by = cy + oy + Math.sin(t * 0.09 + i * 0.9) * 14;
+      if (bx > -30 && bx < W + 30 && by > -30) sprBird(bx, by, rot, pal);
+    });
+
+    if (t > 150) {
+      const a = Math.min((t - 150) / 45, 1);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = '#ffe033';
+      ctx.font = 'bold 26px monospace';
+      ctx.fillText('FLAPPY SOL', W / 2, H / 2 - 14);
+      ctx.globalAlpha = 1;
+    }
+    if (t > 195) {
+      const a = Math.min((t - 195) / 35, 1);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '13px monospace';
+      ctx.fillText('Clic  /  Espace  /  Toucher', W / 2, H / 2 + 18);
+      ctx.globalAlpha = 1;
+    }
+  }
+
   if (state === 'countdown') {
     const idx   = Math.min(Math.floor(countdown / 40), 5);
     const label = idx < 5 ? String(5 - idx) : 'Go !';
@@ -384,7 +460,7 @@ function render() {
     if (!p.collected) sprCoin(p.x + PIPE_W / 2, p.coinY);
   });
   sprGround(groundX);
-  sprBird(bird.x, bird.y, bird.rot);
+  if (state !== 'intro2') sprBird(bird.x, bird.y, bird.rot);
   drawUI();
 }
 
