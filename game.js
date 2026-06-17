@@ -26,7 +26,7 @@ canvas.height = H;
 // ─────────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────────
-let bird, pipes, score, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds;
+let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds, deadFrame;
 
 function init() {
   bird    = { x: 90, y: H / 2 - 90, vy: 0, rot: 0 };
@@ -39,6 +39,7 @@ function init() {
   intro2Frame = 0;
   waitFrame   = 0;
   bgBirds     = [];
+  deadFrame   = 0;
   // coinTick n'est pas réinitialisé : la rotation continue sans saut visuel
 }
 
@@ -210,7 +211,7 @@ function spawnPipe() {
 
 function flap() {
   if (state === 'intro2')    return; // ignoré pendant l'intro2
-  if (state === 'dead')      { init(); state = 'countdown'; bird.vy = FLAP_VY; return; }
+  if (state === 'dead')      { if (deadFrame < 30) return; init(); state = 'countdown'; bird.vy = FLAP_VY; return; }
   if (state === 'countdown') return;
   if (state === 'intro1')   { state = 'intro2'; intro2Frame = 0; return; }
   bird.vy = FLAP_VY;
@@ -295,6 +296,7 @@ function update() {
     return;
   }
 
+  if (state === 'dead') { deadFrame++; return; }
   if (state !== 'playing') return;
 
   frame++;
@@ -318,6 +320,7 @@ function update() {
       if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
         p.collected = true;
         score++;
+        if (score >= best) best = score;
       }
     }
   }
@@ -447,6 +450,11 @@ function drawUI() {
     ctx.strokeText(score, W/2 + 12, 62);
     ctx.fillStyle = '#ffffff';
     ctx.fillText(score, W/2 + 12, 62);
+    if (score > 0 && score >= best) {
+      ctx.font = 'bold 13px monospace';
+      ctx.fillStyle = '#ffe033';
+      ctx.fillText('record', W/2 + 12, 76);
+    }
   }
 
   if (state === 'dead') {
@@ -459,10 +467,19 @@ function drawUI() {
     ctx.fillStyle = '#ffffff';
     ctx.font = '16px monospace';
     ctx.fillText(`× ${score}`, W/2 + 4, H/2 + 16);
+    if (score > 0 && score >= best) {
+      const sw  = ctx.measureText(`× ${score}`).width;
+      const lerpT = (Math.sin(coinTick * 0.05) + 1) / 2;
+      ctx.font      = 'bold 13px monospace';
+      ctx.fillStyle = `rgb(255, ${Math.round(160 + lerpT * 64)}, ${Math.round(lerpT * 51)})`;
+      ctx.textAlign = 'left';
+      ctx.fillText('record', W/2 + 4 + sw / 2 + 8, H/2 + 16);
+      ctx.textAlign = 'center';
+    }
 
     ctx.fillStyle = '#aaaaaa';
     ctx.font = '12px monospace';
-    ctx.fillText('Cliquer pour rejouer', W/2, H/2 + 46);
+    ctx.fillText('Click to play again', W/2, H/2 + 46);
   }
 
   ctx.textAlign = 'left';
@@ -515,6 +532,7 @@ document.addEventListener('keydown', e => {
 // ─────────────────────────────────────────────
 //  LANCEMENT
 // ─────────────────────────────────────────────
+best     = 0;
 coinTick = 0;
 init();
 loop();
