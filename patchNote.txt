@@ -6,6 +6,7 @@ v0.01.0 = Intro groupe d'oiseau
 v0.01.1 = amélioration intro
 v0.01.2 = amélioration intro groupe oiseau
 v0.02.0 = Ecran titre animé
+v0.03.0 = Nettoyage du code
 
 ** next step **
 affichage nouveau record dans pop-up

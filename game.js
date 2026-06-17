@@ -16,13 +16,16 @@ const BIRD_W     = 26;
 const BIRD_H     = 22;
 const PIPE_SPAWN_EVERY = 88; // frames
 
+const INTRO2_T1  = 120;
+const INTRO2_CX0 = W * 0.62;
+
 canvas.width  = W;
 canvas.height = H;
 
 // ─────────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────────
-let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds;
+let bird, pipes, score, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds;
 
 function init() {
   bird    = { x: 90, y: H / 2, vy: 0, rot: 0 };
@@ -94,6 +97,20 @@ const BIRD_PALS = [
   ['#ff7043','#ffccbc','#bf360c'], // 7 corail
 ];
 
+const COIN_BORDER = [
+  [1,0],[2,0],[3,0],
+  [0,1],[4,1],[0,2],[4,2],[0,3],[4,3],[0,4],[4,4],
+  [1,5],[2,5],[3,5],
+];
+const COIN_FILL = [
+  [1,1],[2,1],[3,1],
+  [1,2],[2,2],[3,2],
+  [1,3],[2,3],[3,3],
+  [1,4],[2,4],[3,4],
+];
+const COIN_SHINE  = [[1,1],[2,1],[1,2]];
+const COIN_SHADOW = [[3,3],[2,4],[3,4]];
+
 function sprBird(x, y, rot, pal = 0) {
   const [body, light, dark] = BIRD_PALS[pal % BIRD_PALS.length];
   ctx.save();
@@ -126,72 +143,25 @@ function sprBird(x, y, rot, pal = 0) {
 function sprCoin(x, y, spinning = true) {
   const S = 3;
   const spinX = spinning ? Math.abs(Math.cos(coinTick * 0.04)) : 1;
-
-  const border = [
-    [1,0],[2,0],[3,0],
-    [0,1],[4,1],
-    [0,2],[4,2],
-    [0,3],[4,3],
-    [0,4],[4,4],
-    [1,5],[2,5],[3,5],
-  ];
-  const fill = [
-    [1,1],[2,1],[3,1],
-    [1,2],[2,2],[3,2],
-    [1,3],[2,3],[3,3],
-    [1,4],[2,4],[3,4],
-  ];
-  const shine = [[1,1],[2,1],[1,2]];
-
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(spinX, 1);
-
-  const ox = -8;
-  const oy = -9;
-
+  const ox = -8, oy = -9;
   ctx.fillStyle = '#b8860b';
-  border.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
+  COIN_BORDER.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
   ctx.fillStyle = '#f5d600';
-  fill.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
+  COIN_FILL.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
   ctx.fillStyle = '#fff3a0';
-  shine.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
-
+  COIN_SHINE.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
   ctx.restore();
 }
 
-
 /** COIN UI — même forme que sprCoin (5×6), statique, avec ombre */
 function sprCoinUI(x, y) {
-  const S  = 3;
-  const ox = x - 8;
-  const oy = y - 9;
-
-  const border = [
-    [1,0],[2,0],[3,0],
-    [0,1],[4,1],
-    [0,2],[4,2],
-    [0,3],[4,3],
-    [0,4],[4,4],
-    [1,5],[2,5],[3,5],
-  ];
-  const fill = [
-    [1,1],[2,1],[3,1],
-    [1,2],[2,2],[3,2],
-    [1,3],[2,3],[3,3],
-    [1,4],[2,4],[3,4],
-  ];
-  const shine  = [[1,1],[2,1],[1,2]];
-  const shadow = [[3,3],[2,4],[3,4]];
-
-  ctx.fillStyle = '#b8860b';
-  border.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
-  ctx.fillStyle = '#f5d600';
-  fill.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
-  ctx.fillStyle = '#fff3a0';
-  shine.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
+  sprCoin(x, y, false);
+  const S = 3, ox = x - 8, oy = y - 9;
   ctx.fillStyle = '#d4a820';
-  shadow.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
+  COIN_SHADOW.forEach(([bx, by]) => ctx.fillRect(ox + bx*S, oy + by*S, S, S));
 }
 
 /** PIPE — tuyau vert avec chapeau et ombres */
@@ -274,26 +244,24 @@ function update() {
     intro2Frame++;
     groundX = (groundX - PIPE_SPEED) % 20;
 
-    const T1       = 120; // fin traversée gauche→droite
     const T2       = 40;  // frames où le bird suit l'envol avant de décrocher
     const t        = intro2Frame;
-    const cx0      = -50 + 1 * (W * 0.62 + 50);
-    const bxDetach = cx0 - 22 + T2 * 1.5; // x réel au moment exact du décrochage
+    const bxDetach = INTRO2_CX0 - 22 + T2 * 1.5; // x réel au moment exact du décrochage
 
-    if (t <= T1 + T2) {
+    if (t <= INTRO2_T1 + T2) {
       // bird suit la formation puis le début de l'envol
-      const p   = Math.min(t, T1) / T1;
+      const p   = Math.min(t, INTRO2_T1) / INTRO2_T1;
       const ep  = p < 0.5 ? 2*p*p : -1 + (4 - 2*p)*p;
       const lcx = -50 + ep * (W * 0.62 + 50);
       const lcy = H * 0.42 + Math.sin(t * 0.09) * 22;
-      const swoop = t > T1 ? ((t - T1) / 85) ** 2 * 430 : 0;
-      bird.x   = t <= T1 ? lcx - 22 : cx0 - 22 + (t - T1) * 1.5;
+      const swoop = t > INTRO2_T1 ? ((t - INTRO2_T1) / 85) ** 2 * 430 : 0;
+      bird.x   = t <= INTRO2_T1 ? lcx - 22 : INTRO2_CX0 - 22 + (t - INTRO2_T1) * 1.5;
       bird.y   = lcy + Math.sin(t * 0.09 + 1.5) * 14 - swoop;
       bird.vy  = 0;
-      bird.rot = t > T1 ? -0.15 - ((t - T1) / T2) * 0.4 : -0.15;
+      bird.rot = t > INTRO2_T1 ? -0.15 - ((t - INTRO2_T1) / T2) * 0.4 : -0.15;
     } else {
       // décrochage : drift de bxDetach vers x=90, auto-flap
-      const elapsed = t - T1 - T2;
+      const elapsed = t - INTRO2_T1 - T2;
       bird.x = bxDetach + (90 - bxDetach) * Math.min(elapsed / 120, 1);
       if (elapsed % 37 === 30) bird.vy = FLAP_VY;
       bird.vy += GRAVITY;
@@ -340,7 +308,6 @@ function update() {
       if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
         p.collected = true;
         score++;
-        if (score > (best || 0)) best = score;
       }
     }
   }
@@ -407,23 +374,19 @@ function drawUI() {
       [-132,  28, 0],
       [-158,   4, 6],
     ];
-    const t  = intro2Frame;
-    const T1 = 120; // frame de transition traversée → envol
-
-    // position exacte du leader à T1 — sert de point de départ de la phase 2
-    const cx0 = -50 + 1 * (W * 0.62 + 50);              // ease-in-out vaut 1 à p=1
-    const cy0 = H * 0.42 + Math.sin(T1 * 0.09) * 22;
+    const t   = intro2Frame;
+    const cy0 = H * 0.42 + Math.sin(INTRO2_T1 * 0.09) * 22;
 
     let cx, cy, rot;
-    if (t <= T1) {
-      const p  = t / T1;
+    if (t <= INTRO2_T1) {
+      const p  = t / INTRO2_T1;
       const ep = p < 0.5 ? 2*p*p : -1 + (4 - 2*p)*p;   // ease-in-out
       cx  = -50 + ep * (W * 0.62 + 50);
       cy  = H * 0.42 + Math.sin(t * 0.09) * 22;
       rot = -0.15;
     } else {
-      const p = (t - T1) / 85;
-      cx  = cx0 + p * 130;                               // continue vers la droite
+      const p = (t - INTRO2_T1) / 85;
+      cx  = INTRO2_CX0 + p * 130;                        // continue vers la droite
       cy  = cy0 - p * p * 430;                           // monte en accélérant
       rot = -0.15 - p * 0.75;
     }
@@ -550,7 +513,6 @@ document.addEventListener('keydown', e => {
 // ─────────────────────────────────────────────
 //  LANCEMENT
 // ─────────────────────────────────────────────
-best     = 0;
 coinTick = 0;
 init();
 loop();
