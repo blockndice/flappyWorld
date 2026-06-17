@@ -22,7 +22,7 @@ canvas.height = H;
 // ─────────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────────
-let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame;
+let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds;
 
 function init() {
   bird    = { x: 90, y: H / 2, vy: 0, rot: 0 };
@@ -33,6 +33,8 @@ function init() {
   groundX     = 0;
   countdown   = 0;
   intro2Frame = 0;
+  waitFrame   = 0;
+  bgBirds     = [];
   // coinTick n'est pas réinitialisé : la rotation continue sans saut visuel
 }
 
@@ -244,6 +246,30 @@ function flap() {
 }
 
 function update() {
+  if (state === 'waiting') {
+    waitFrame++;
+    groundX  = (groundX - PIPE_SPEED) % 20;
+    bird.x   = W / 2;
+    bird.y   = H / 2 - 90 + Math.sin(waitFrame * 0.07) * 9;
+    bird.rot = -Math.abs(Math.sin(waitFrame * 0.07)) * 0.25;
+
+    if (Math.random() < 0.012) {
+      const scale = 0.3 + Math.random() * 1.1;
+      bgBirds.push({
+        x: -60,
+        y: 50 + Math.random() * (H - GROUND_H - 100),
+        scale,
+        speed: scale * 2.0 + 0.6,
+        pal: Math.random() < 0.55 ? 0 : [1, 4, 6, 7, 3][Math.floor(Math.random() * 5)],
+        flapPhase: Math.random() * Math.PI * 2,
+      });
+      bgBirds.sort((a, b) => a.scale - b.scale);
+    }
+    bgBirds = bgBirds.filter(b => b.x < W + 70);
+    bgBirds.forEach(b => { b.x += b.speed; });
+    return;
+  }
+
   if (state === 'intro2') {
     intro2Frame++;
     groundX = (groundX - PIPE_SPEED) % 20;
@@ -413,7 +439,7 @@ function drawUI() {
       ctx.globalAlpha = a;
       ctx.fillStyle = '#ffe033';
       ctx.font = 'bold 26px monospace';
-      ctx.fillText('FLAPPY SOL', W / 2, H / 2 - 14);
+      ctx.fillText('FLAPPY BLOCK', W / 2, H / 2 - 14);
       ctx.globalAlpha = 1;
     }
     if (t > 195) {
@@ -441,7 +467,7 @@ function drawUI() {
     roundRect(W/2 - 110, H/2 - 55, 220, 90, 8, 'rgba(0,0,0,0.45)');
     ctx.fillStyle = '#ffe033';
     ctx.font = 'bold 20px monospace';
-    ctx.fillText('FLAPPY SOL', W/2, H/2 - 20);
+    ctx.fillText('FLAPPY BLOCK', W/2, H/2 - 20);
     ctx.fillStyle = '#ffffff';
     ctx.font = '13px monospace';
     ctx.fillText('Clic  /  Espace  /  Toucher', W/2, H/2 + 14);
@@ -481,6 +507,17 @@ function drawUI() {
 //  BOUCLE PRINCIPALE
 // ─────────────────────────────────────────────
 
+function renderBgBirds() {
+  bgBirds.forEach(b => {
+    const rot = Math.sin(waitFrame * 0.12 + b.flapPhase) * 0.25 - 0.1;
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.scale(b.scale, b.scale);
+    sprBird(0, 0, rot, b.pal);
+    ctx.restore();
+  });
+}
+
 function render() {
   sprBg();
   pipes.forEach(p => {
@@ -488,6 +525,7 @@ function render() {
     if (!p.collected) sprCoin(p.x + PIPE_W / 2, p.coinY);
   });
   sprGround(groundX);
+  if (state === 'waiting') renderBgBirds();
   sprBird(bird.x, bird.y, bird.rot);
   drawUI();
 }

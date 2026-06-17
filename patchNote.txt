@@ -5,8 +5,10 @@ v0.00.2 = décompte avec la partie
 v0.01.0 = Intro groupe d'oiseau
 v0.01.1 = amélioration intro
 v0.01.2 = amélioration intro groupe oiseau
+v0.02.0 = Ecran titre animé
 
 ** next step **
 affichage nouveau record dans pop-up
 intro, titre, + intro first partie partis
 historique score
+distribution de reward sur une période
