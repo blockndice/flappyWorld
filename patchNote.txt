@@ -9,6 +9,7 @@ v0.02.0 = Ecran titre animé
 v0.03.0 = Nettoyage du code
 v0.03.1 = Renommage Flappy World + état waiting → intro1
 v0.04.0 = Intro1 terminé
+v0.04.1 = Intro2 terminé
 
 ** next step **
 affichage nouveau record dans pop-up

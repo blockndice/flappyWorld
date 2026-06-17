@@ -412,15 +412,7 @@ function drawUI() {
       ctx.globalAlpha = a;
       ctx.fillStyle = '#ffe033';
       ctx.font = 'bold 26px monospace';
-      ctx.fillText('FLAPPY WORLD', W / 2, H / 2 - 14);
-      ctx.globalAlpha = 1;
-    }
-    if (t > 195) {
-      const a = Math.min((t - 195) / 35, 1);
-      ctx.globalAlpha = a;
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '13px monospace';
-      ctx.fillText('Clic  /  Espace  /  Toucher', W / 2, H / 2 + 18);
+      ctx.fillText('Be ready', W / 2, H / 2 - 14);
       ctx.globalAlpha = 1;
     }
   }
@@ -432,7 +424,7 @@ function drawUI() {
     ctx.lineWidth   = 7;
     ctx.strokeStyle = '#00000099';
     ctx.strokeText(label, W / 2, H / 2 + 24);
-    ctx.fillStyle   = idx === 5 ? '#44ff88' : '#ffffff';
+    ctx.fillStyle   = idx === 5 ? '#ffe033' : '#ffffff';
     ctx.fillText(label, W / 2, H / 2 + 24);
   }
 
