@@ -18,7 +18,9 @@ const PIPE_SPAWN_EVERY = 88; // frames
 
 const INTRO2_T1    = 120;
 const INTRO2_CX0   = W * 0.62;
-const BG_BIRD_MIN_Y = 120; // hauteur min de spawn des oiseaux de fond — augmenter pour les repousser vers le bas
+const BG_BIRD_MIN_Y  = 120; // hauteur min de spawn des oiseaux de fond — augmenter pour les repousser vers le bas
+const CLOUD_Y_MIN    = 15;  // ← position Y minimale des nuages (haut de l'écran) — diminuer pour les remonter
+const CLOUD_Y_MAX    = 110; // ← position Y maximale des nuages (bas autorisé)    — diminuer pour les remonter
 
 canvas.width  = W;
 canvas.height = H;
@@ -29,6 +31,7 @@ canvas.height = H;
 let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds, deadFrame, deadPage, prevTopScore;
 let topScores = [];
 let currentScoreRank = -1;
+let bgClouds = [];
 
 function init() {
   bird    = { x: 90, y: H / 2 - 90, vy: 0, vx: 0, rot: 0, scale: 1 };
@@ -43,6 +46,12 @@ function init() {
   bgBirds      = [];
   deadFrame    = 0;
   prevTopScore = topScores[topScores.length - 1] || 0;
+  bgClouds     = Array.from({ length: 7 }, () => ({
+    x:     Math.random() * W,
+    y:     CLOUD_Y_MIN + Math.random() * (CLOUD_Y_MAX - CLOUD_Y_MIN),
+    s:     4  + Math.floor(Math.random() * 5),
+    shape: CLOUD_SHAPES[Math.floor(Math.random() * CLOUD_SHAPES.length)],
+  }));
   // coinTick n'est pas réinitialisé : la rotation continue sans saut visuel
 }
 
@@ -52,7 +61,7 @@ function init() {
 //    quand les vrais sprites seront prêts.
 // ─────────────────────────────────────────────
 
-/** BACKGROUND — ciel dégradé + nuages pixel */
+/** BACKGROUND — ciel dégradé + nuages + soleil */
 function sprBg() {
   const grad = ctx.createLinearGradient(0, 0, 0, H - GROUND_H);
   grad.addColorStop(0, '#1a6fa0');
@@ -60,18 +69,33 @@ function sprBg() {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H - GROUND_H);
 
-  pixelCloud(50,  70);
-  pixelCloud(220, 100);
-  pixelCloud(130, 40);
+  drawSun();
+  for (const c of bgClouds) pixelCloud(c.x, c.y, c.s, c.shape);
 }
 
-function pixelCloud(ox, oy) {
-  const S = 7;
-  const shape = [
-    [0,1],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2],[3,1],[3,2],[4,1],
-  ];
+function drawSun() {
+  const sx = 332, sy = 48, sr = 11;
+  ctx.fillStyle = '#ffee33';
+  for (let dy = -sr; dy <= sr; dy += 2) {
+    const hw = Math.sqrt(Math.max(0, sr * sr - dy * dy));
+    ctx.fillRect(sx - hw, sy + dy, hw * 2, 2);
+  }
+  ctx.fillStyle = '#ffcc00';
+  for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+    ctx.fillRect(sx + Math.cos(a) * (sr + 5) - 2, sy + Math.sin(a) * (sr + 5) - 2, 3, 3);
+  }
+}
+
+const CLOUD_SHAPES = [
+  [[0,1],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2],[3,1],[3,2],[4,1]],                                  // large allongé
+  [[1,0],[2,0],[0,1],[1,1],[2,1],[3,1],[0,2],[1,2],[2,2],[3,2],[1,3],[2,3]],                       // haut et gonflé
+  [[1,0],[0,1],[1,1],[2,1],[3,1],[1,2],[2,2]],                                                     // petit compact
+  [[1,0],[2,0],[3,0],[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[2,2],[3,2]],                             // long et plat
+];
+
+function pixelCloud(ox, oy, s = 7, shape = CLOUD_SHAPES[0]) {
   ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  shape.forEach(([cx, cy]) => ctx.fillRect(ox + cx * S, oy + cy * S, S, S));
+  shape.forEach(([cx, cy]) => ctx.fillRect(ox + cx * s, oy + cy * s, s, s));
 }
 
 /** GROUND — bande herbe + terre scrollante */
@@ -600,6 +624,17 @@ function render() {
 
 function loop() {
   coinTick++;
+  if (state !== 'dead' && state !== 'score') {
+    for (const c of bgClouds) {
+      c.x -= 0.18;
+      if (c.x < -80) {
+        c.x     = W + 20 + Math.random() * 100;
+        c.y     = CLOUD_Y_MIN + Math.random() * (CLOUD_Y_MAX - CLOUD_Y_MIN);
+        c.s     = 4  + Math.floor(Math.random() * 5);
+        c.shape = CLOUD_SHAPES[Math.floor(Math.random() * CLOUD_SHAPES.length)];
+      }
+    }
+  }
   update();
   render();
   requestAnimationFrame(loop);

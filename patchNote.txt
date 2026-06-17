@@ -13,6 +13,7 @@ v0.04.1 = Intro2 terminé
 v0.05.0 = afficher le record + protection fermeture score
 v0.05.1 = amélioration score + score top 10
 v0.06.0 = animation impact collision (shake + freeze + éjection oiseau aléatoire)
+v0.07.0 = amélioration décors (nuage + soleil)
 
 ** next step **
 distribution de reward sur une période
