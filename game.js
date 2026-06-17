@@ -31,10 +31,10 @@ let topScores = [];
 let currentScoreRank = -1;
 
 function init() {
-  bird    = { x: 90, y: H / 2 - 90, vy: 0, rot: 0 };
+  bird    = { x: 90, y: H / 2 - 90, vy: 0, vx: 0, rot: 0, scale: 1 };
   pipes   = [];
   score   = 0;
-  state       = 'intro1'; // intro1 | intro2 | countdown | playing | dead
+  state       = 'intro1'; // intro1 | intro2 | countdown | playing | dead | score
   frame       = 0;
   groundX     = 0;
   countdown   = 0;
@@ -223,13 +223,15 @@ function addScore(s) {
 
 function die() {
   addScore(score);
-  state    = 'dead';
-  deadPage = 1;
+  state     = 'dead';
+  deadFrame = 0;
+  deadPage  = 1;
 }
 
 function flap() {
-  if (state === 'intro2')    return; // ignoré pendant l'intro2
-  if (state === 'dead') {
+  if (state === 'intro2')    return;
+  if (state === 'dead')      return;
+  if (state === 'score') {
     if (deadFrame < 30) return;
     if (deadPage === 1) { deadPage = 2; deadFrame = 0; return; }
     init(); state = 'countdown'; bird.vy = FLAP_VY; return;
@@ -318,7 +320,20 @@ function update() {
     return;
   }
 
-  if (state === 'dead') { deadFrame++; return; }
+  if (state === 'dead') {
+    deadFrame++;
+    if (deadFrame >= 21) {
+      if (deadFrame === 21) { bird.vy = -(3 + Math.random() * 13); bird.vx = (Math.random() - 0.5) * 14; }
+      bird.vy    += GRAVITY;
+      bird.y     += bird.vy;
+      bird.x     += bird.vx;
+      bird.scale  = Math.min(2.8, 1 + (deadFrame - 20) * 0.045);
+      bird.rot    = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
+      if (bird.y > H + 80) { state = 'score'; deadFrame = 0; }
+    }
+    return;
+  }
+  if (state === 'score') { deadFrame++; return; }
   if (state !== 'playing') return;
 
   frame++;
@@ -477,7 +492,7 @@ function drawUI() {
     }
   }
 
-  if (state === 'dead') {
+  if (state === 'score') {
     if (deadPage === 1) {
       roundRect(W/2 - 120, H/2 - 75, 240, 130, 10, 'rgba(0,0,0,0.55)');
       ctx.fillStyle = '#ff4455';
@@ -562,6 +577,11 @@ function renderBgBirds() {
 }
 
 function render() {
+  ctx.save();
+  if (state === 'dead' && deadFrame > 0 && deadFrame <= 10) {
+    const mag = (11 - deadFrame) * 1.1;
+    ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
+  }
   sprBg();
   pipes.forEach(p => {
     sprPipe(p.x, p.topH, p.topH + PIPE_GAP);
@@ -569,8 +589,13 @@ function render() {
   });
   sprGround(groundX);
   if (state === 'intro1') renderBgBirds();
-  sprBird(bird.x, bird.y, bird.rot);
+  ctx.save();
+  ctx.translate(bird.x, bird.y);
+  ctx.scale(bird.scale, bird.scale);
+  sprBird(0, 0, bird.rot);
+  ctx.restore();
   drawUI();
+  ctx.restore();
 }
 
 function loop() {

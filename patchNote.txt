@@ -12,11 +12,12 @@ v0.04.0 = Intro1 terminé
 v0.04.1 = Intro2 terminé
 v0.05.0 = afficher le record + protection fermeture score
 v0.05.1 = amélioration score + score top 10
+v0.06.0 = animation impact collision (shake + freeze + éjection oiseau aléatoire)
 
 ** next step **
-historique score
 distribution de reward sur une période
-mettre une condition pour limiter le nombre de run
+mettre une condition pour limiter le nombre de run -> prochain run dans 24h
+- lorsqu'un record est atteint
 
 cycle
-intro1 → intro2 → countdown → playing → dead
+intro1 → intro2 → countdown → playing → dead → score
