@@ -1,10 +1,10 @@
-# FlappySol
+# Flappy World
 
 Clone de Flappy Bird entièrement en pixel art, développé en JavaScript vanilla sur Canvas 2D. Aucune dépendance externe.
 
 ## Présentation
 
-Le joueur contrôle un oiseau pixel art et doit naviguer entre des tuyaux en évitant les collisions. Des pièces d'or sont placées au centre de chaque ouverture — les collecter fait monter le score. Le meilleur score est conservé pendant la session.
+Le joueur contrôle un oiseau pixel art et doit naviguer entre des tuyaux en évitant les collisions. Des pièces d'or sont placées au centre de chaque ouverture — les collecter fait monter le score.
 
 ## Stack technique
 
@@ -18,7 +18,7 @@ Le joueur contrôle un oiseau pixel art et doit naviguer entre des tuyaux en év
 ## Fichiers
 
 ```
-flappySol/
+flappyWorld/
 ├── index.html   — page unique, monte le canvas
 ├── style.css    — fond #0d0d1a, canvas centré, rendu pixelisé
 ├── game.js      — toute la logique du jeu
@@ -29,11 +29,11 @@ flappySol/
 
 | Section | Rôle |
 |---|---|
-| Constants | Dimensions, physique, vitesse |
-| State | `bird`, `pipes`, `score`, `best`, `state`, `frame` |
+| Constants | Dimensions, physique, vitesse, constantes d'intro |
+| State | `bird`, `pipes`, `score`, `state`, `frame` |
 | Sprites | `sprBg`, `sprGround`, `sprBird`, `sprCoin`, `sprCoinUI`, `sprPipe` |
 | Logique | `spawnPipe`, `flap`, `update` (physique + collisions) |
-| Rendu UI | `drawUI` (écrans waiting / playing / dead) |
+| Rendu UI | `drawUI` (écrans intro1 / intro2 / countdown / playing / dead) |
 | Boucle | `loop` → `update` + `render` via `requestAnimationFrame` |
 
 ## Sprites (pixel art manuel)
@@ -59,12 +59,14 @@ Tous les sprites sont dessinés pixel par pixel avec `ctx.fillRect` — pas d'im
 ## États du jeu
 
 ```
-waiting → playing → dead → (waiting)
+intro1 → intro2 → countdown → playing → dead → (intro1)
 ```
 
-- **waiting** : écran titre, attend le premier input
+- **intro1** : écran titre, oiseau central en flap infini, oiseaux de fond traversants
+- **intro2** : séquence animée du groupe d'oiseaux, transition vers le décompte
+- **countdown** : décompte 5→1→Go!, physique active, tuyaux absents
 - **playing** : physique active, spawn de tuyaux toutes les 88 frames
-- **dead** : collision détectée, affiche score + record
+- **dead** : collision détectée, affiche le score
 
 ## Physique
 
@@ -77,4 +79,4 @@ PIPE_GAP   = 130    (ouverture entre tuyaux)
 
 ## Statut
 
-Alpha — sprites placeholders, pas de sons, pas de persistence du record entre sessions.
+Alpha — sprites placeholders, pas de sons, pas de persistence du score entre sessions.

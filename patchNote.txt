@@ -7,9 +7,14 @@ v0.01.1 = amélioration intro
 v0.01.2 = amélioration intro groupe oiseau
 v0.02.0 = Ecran titre animé
 v0.03.0 = Nettoyage du code
+v0.03.1 = Renommage Flappy World + état waiting → intro1
+v0.04.0 = Intro1 terminé
 
 ** next step **
 affichage nouveau record dans pop-up
-intro, titre, + intro first partie partis
 historique score
 distribution de reward sur une période
+mettre une condition pour limiter le nombre de run
+
+cycle
+intro1 → intro2 → countdown → playing → dead

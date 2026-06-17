@@ -16,8 +16,9 @@ const BIRD_W     = 26;
 const BIRD_H     = 22;
 const PIPE_SPAWN_EVERY = 88; // frames
 
-const INTRO2_T1  = 120;
-const INTRO2_CX0 = W * 0.62;
+const INTRO2_T1    = 120;
+const INTRO2_CX0   = W * 0.62;
+const BG_BIRD_MIN_Y = 120; // hauteur min de spawn des oiseaux de fond — augmenter pour les repousser vers le bas
 
 canvas.width  = W;
 canvas.height = H;
@@ -28,10 +29,10 @@ canvas.height = H;
 let bird, pipes, score, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds;
 
 function init() {
-  bird    = { x: 90, y: H / 2, vy: 0, rot: 0 };
+  bird    = { x: 90, y: H / 2 - 90, vy: 0, rot: 0 };
   pipes   = [];
   score   = 0;
-  state       = 'waiting'; // intro1 | waiting | intro2 | countdown | playing | dead
+  state       = 'intro1'; // intro1 | intro2 | countdown | playing | dead
   frame       = 0;
   groundX     = 0;
   countdown   = 0;
@@ -211,32 +212,41 @@ function flap() {
   if (state === 'intro2')    return; // ignoré pendant l'intro2
   if (state === 'dead')      { init(); state = 'countdown'; bird.vy = FLAP_VY; return; }
   if (state === 'countdown') return;
-  if (state === 'waiting')   { state = 'intro2'; intro2Frame = 0; return; }
+  if (state === 'intro1')   { state = 'intro2'; intro2Frame = 0; return; }
   bird.vy = FLAP_VY;
 }
 
 function update() {
-  if (state === 'waiting') {
+  if (state === 'intro1') {
     waitFrame++;
     groundX  = (groundX - PIPE_SPEED) % 20;
-    bird.x   = W / 2;
-    bird.y   = H / 2 - 90 + Math.sin(waitFrame * 0.07) * 9;
-    bird.rot = -Math.abs(Math.sin(waitFrame * 0.07)) * 0.25;
+    bird.x = W / 2;
+    if (waitFrame % 37 === 1) bird.vy = -(GRAVITY * 19);
+    bird.vy += GRAVITY;
+    bird.y  += bird.vy;
+    bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y, H - GROUND_H - BIRD_H / 2 - 8));
+    bird.rot = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
 
     if (Math.random() < 0.012) {
       const scale = 0.3 + Math.random() * 1.1;
       bgBirds.push({
         x: -60,
-        y: 50 + Math.random() * (H - GROUND_H - 100),
+        y: BG_BIRD_MIN_Y + Math.random() * (H - GROUND_H - BG_BIRD_MIN_Y - 30),
+        vy: FLAP_VY,
+        flapOffset: Math.floor(Math.random() * 37),
         scale,
         speed: scale * 2.0 + 0.6,
         pal: Math.random() < 0.55 ? 0 : [1, 4, 6, 7, 3][Math.floor(Math.random() * 5)],
-        flapPhase: Math.random() * Math.PI * 2,
       });
       bgBirds.sort((a, b) => a.scale - b.scale);
     }
     bgBirds = bgBirds.filter(b => b.x < W + 70);
-    bgBirds.forEach(b => { b.x += b.speed; });
+    bgBirds.forEach(b => {
+      b.x  += b.speed;
+      b.vy += GRAVITY;
+      b.y  += b.vy;
+      if ((waitFrame + b.flapOffset) % 37 === 0) b.vy = FLAP_VY;
+    });
     return;
   }
 
@@ -402,7 +412,7 @@ function drawUI() {
       ctx.globalAlpha = a;
       ctx.fillStyle = '#ffe033';
       ctx.font = 'bold 26px monospace';
-      ctx.fillText('FLAPPY BLOCK', W / 2, H / 2 - 14);
+      ctx.fillText('FLAPPY WORLD', W / 2, H / 2 - 14);
       ctx.globalAlpha = 1;
     }
     if (t > 195) {
@@ -426,11 +436,11 @@ function drawUI() {
     ctx.fillText(label, W / 2, H / 2 + 24);
   }
 
-  if (state === 'waiting') {
+  if (state === 'intro1') {
     roundRect(W/2 - 110, H/2 - 55, 220, 90, 8, 'rgba(0,0,0,0.45)');
     ctx.fillStyle = '#ffe033';
     ctx.font = 'bold 20px monospace';
-    ctx.fillText('FLAPPY BLOCK', W/2, H/2 - 20);
+    ctx.fillText('FLAPPY WORLD', W/2, H/2 - 20);
     ctx.fillStyle = '#ffffff';
     ctx.font = '13px monospace';
     ctx.fillText('Clic  /  Espace  /  Toucher', W/2, H/2 + 14);
@@ -472,7 +482,7 @@ function drawUI() {
 
 function renderBgBirds() {
   bgBirds.forEach(b => {
-    const rot = Math.sin(waitFrame * 0.12 + b.flapPhase) * 0.25 - 0.1;
+    const rot = Math.min(Math.max(b.vy * 0.055, -0.45), 1.3);
     ctx.save();
     ctx.translate(b.x, b.y);
     ctx.scale(b.scale, b.scale);
@@ -488,7 +498,7 @@ function render() {
     if (!p.collected) sprCoin(p.x + PIPE_W / 2, p.coinY);
   });
   sprGround(groundX);
-  if (state === 'waiting') renderBgBirds();
+  if (state === 'intro1') renderBgBirds();
   sprBird(bird.x, bird.y, bird.rot);
   drawUI();
 }
