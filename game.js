@@ -26,7 +26,9 @@ canvas.height = H;
 // ─────────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────────
-let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds, deadFrame;
+let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds, deadFrame, deadPage, prevTopScore;
+let topScores = [];
+let currentScoreRank = -1;
 
 function init() {
   bird    = { x: 90, y: H / 2 - 90, vy: 0, rot: 0 };
@@ -38,8 +40,9 @@ function init() {
   countdown   = 0;
   intro2Frame = 0;
   waitFrame   = 0;
-  bgBirds     = [];
-  deadFrame   = 0;
+  bgBirds      = [];
+  deadFrame    = 0;
+  prevTopScore = topScores[topScores.length - 1] || 0;
   // coinTick n'est pas réinitialisé : la rotation continue sans saut visuel
 }
 
@@ -209,9 +212,28 @@ function spawnPipe() {
   pipes.push({ x: W + 10, topH, coinY, collected: false });
 }
 
+function addScore(s) {
+  if (s === 0) { currentScoreRank = -1; return; }
+  topScores.push(s);
+  topScores.sort((a, b) => b - a);
+  if (topScores.length > 10) topScores.length = 10;
+  currentScoreRank = topScores.indexOf(s);
+  localStorage.setItem('fw_top', JSON.stringify(topScores));
+}
+
+function die() {
+  addScore(score);
+  state    = 'dead';
+  deadPage = 1;
+}
+
 function flap() {
   if (state === 'intro2')    return; // ignoré pendant l'intro2
-  if (state === 'dead')      { if (deadFrame < 30) return; init(); state = 'countdown'; bird.vy = FLAP_VY; return; }
+  if (state === 'dead') {
+    if (deadFrame < 30) return;
+    if (deadPage === 1) { deadPage = 2; deadFrame = 0; return; }
+    init(); state = 'countdown'; bird.vy = FLAP_VY; return;
+  }
   if (state === 'countdown') return;
   if (state === 'intro1')   { state = 'intro2'; intro2Frame = 0; return; }
   bird.vy = FLAP_VY;
@@ -320,7 +342,7 @@ function update() {
       if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
         p.collected = true;
         score++;
-        if (score >= best) best = score;
+        if (score > best) { best = score; localStorage.setItem('fw_best', best); }
       }
     }
   }
@@ -334,8 +356,7 @@ function update() {
   const bh = BIRD_H - margin * 2;
 
   if (bird.y - BIRD_H / 2 < 0 || bird.y + BIRD_H / 2 >= H - GROUND_H) {
-    state = 'dead';
-    return;
+    die(); return;
   }
 
   for (const p of pipes) {
@@ -343,8 +364,7 @@ function update() {
     const CAP_EX = 6;
     if (bx + bw > p.x - CAP_EX && bx < p.x + PIPE_W + CAP_EX) {
       if (by < p.topH || by + bh > botY) {
-        state = 'dead';
-        return;
+        die(); return;
       }
     }
   }
@@ -450,36 +470,77 @@ function drawUI() {
     ctx.strokeText(score, W/2 + 12, 62);
     ctx.fillStyle = '#ffffff';
     ctx.fillText(score, W/2 + 12, 62);
-    if (score > 0 && score >= best) {
+    if (score > 0 && score > prevTopScore) {
       ctx.font = 'bold 13px monospace';
       ctx.fillStyle = '#ffe033';
-      ctx.fillText('record', W/2 + 12, 76);
+      ctx.fillText('record', W/2 + 12, 76); // 14px sous le score (y=62)
     }
   }
 
   if (state === 'dead') {
-    roundRect(W/2 - 120, H/2 - 75, 240, 130, 10, 'rgba(0,0,0,0.55)');
-    ctx.fillStyle = '#ff4455';
-    ctx.font = 'bold 24px monospace';
-    ctx.fillText('GAME OVER', W/2, H/2 - 36);
+    if (deadPage === 1) {
+      roundRect(W/2 - 120, H/2 - 75, 240, 130, 10, 'rgba(0,0,0,0.55)');
+      ctx.fillStyle = '#ff4455';
+      ctx.font = 'bold 24px monospace';
+      ctx.fillText('GAME OVER', W/2, H/2 - 36);
 
-    sprCoinUI(W/2 - 30, H/2 + 10);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '16px monospace';
-    ctx.fillText(`× ${score}`, W/2 + 4, H/2 + 16);
-    if (score > 0 && score >= best) {
-      const sw  = ctx.measureText(`× ${score}`).width;
-      const lerpT = (Math.sin(coinTick * 0.05) + 1) / 2;
-      ctx.font      = 'bold 13px monospace';
-      ctx.fillStyle = `rgb(255, ${Math.round(160 + lerpT * 64)}, ${Math.round(lerpT * 51)})`;
-      ctx.textAlign = 'left';
-      ctx.fillText('record', W/2 + 4 + sw / 2 + 8, H/2 + 16);
-      ctx.textAlign = 'center';
+      sprCoinUI(W/2 - 30, H/2 + 10);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '16px monospace';
+      ctx.fillText(`× ${score}`, W/2 + 4, H/2 + 16);
+      if (score > 0 && score > prevTopScore) {
+        const sw    = ctx.measureText(`× ${score}`).width;
+        const lerpT = (Math.sin(coinTick * 0.05) + 1) / 2;
+        ctx.font      = 'bold 13px monospace';
+        ctx.fillStyle = `rgb(255, ${Math.round(160 + lerpT * 64)}, ${Math.round(lerpT * 51)})`;
+        ctx.textAlign = 'left';
+        ctx.fillText('record', W/2 + 4 + sw / 2 + 8, H/2 + 16);
+        ctx.textAlign = 'center';
+      }
+
+      ctx.fillStyle = '#aaaaaa';
+      ctx.font = '12px monospace';
+      ctx.fillText('Click to play again', W/2, H/2 + 46);
+
+    } else {
+      roundRect(W/2 - 100, H/2 - 105, 200, 215, 10, 'rgba(0,0,0,0.55)');
+
+      ctx.fillStyle = '#ffe033';
+      ctx.font = 'bold 16px monospace';
+      ctx.fillText('TOP 10', W/2, H/2 - 86);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(W/2 - 82, H/2 - 74);
+      ctx.lineTo(W/2 + 82, H/2 - 74);
+      ctx.stroke();
+
+      ctx.font = '13px monospace';
+      for (let i = 0; i < 10; i++) {
+        const ty  = H/2 - 60 + i * 16;
+        const val = topScores[i] !== undefined ? topScores[i] : '-';
+        if (i === currentScoreRank) {
+          const lerpT = (Math.sin(coinTick * 0.05) + 1) / 2;
+          ctx.fillStyle = `rgb(255, ${Math.round(160 + lerpT * 64)}, ${Math.round(lerpT * 51)})`;
+          const entry = `${String(i + 1).padStart(2)}.   ${String(val).padStart(3)}`;
+          ctx.fillText(entry, W/2, ty);
+          const entryW = ctx.measureText(entry).width;
+          ctx.font = 'bold 10px monospace';
+          ctx.textAlign = 'left';
+          ctx.fillText('new', W/2 + entryW / 2 + 8, ty);
+          ctx.textAlign = 'center';
+          ctx.font = '13px monospace';
+        } else {
+          ctx.fillStyle = topScores[i] !== undefined ? '#cccccc' : '#444444';
+          ctx.fillText(`${String(i + 1).padStart(2)}.   ${String(val).padStart(3)}`, W/2, ty);
+        }
+      }
+
+      ctx.fillStyle = '#aaaaaa';
+      ctx.font = '12px monospace';
+      ctx.fillText('Click to play again', W/2, H/2 + 98);
     }
-
-    ctx.fillStyle = '#aaaaaa';
-    ctx.font = '12px monospace';
-    ctx.fillText('Click to play again', W/2, H/2 + 46);
   }
 
   ctx.textAlign = 'left';
@@ -532,7 +593,14 @@ document.addEventListener('keydown', e => {
 // ─────────────────────────────────────────────
 //  LANCEMENT
 // ─────────────────────────────────────────────
-best     = 0;
-coinTick = 0;
+const SAVE_VER = '4';
+if (localStorage.getItem('fw_ver') !== SAVE_VER) {
+  localStorage.removeItem('fw_top');
+  localStorage.removeItem('fw_best');
+  localStorage.setItem('fw_ver', SAVE_VER);
+}
+topScores = JSON.parse(localStorage.getItem('fw_top')) ?? [55, 50, 45, 40, 35, 30, 25, 20, 15, 10];
+best      = parseInt(localStorage.getItem('fw_best') || '0');
+coinTick  = 0;
 init();
 loop();
