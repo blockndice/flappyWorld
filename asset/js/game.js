@@ -27,13 +27,22 @@ const POP_CY  = 205; // centre vertical des pop-ups — remonter pour déplacer 
 const BTN_YES = { x: W/2 - 78, y: POP_CY + 16, w: 70, h: 34 };
 const BTN_NO  = { x: W/2 +  8, y: POP_CY + 16, w: 70, h: 34 };
 
+const MENU_BW = 176, MENU_BH = 36, MENU_BX = W/2 - 88;
+const BTN_BACK_I1 = { x: W/2 - 26, y: H/2 + 112, w: 52, h: 20 };
+const MENU_BTNS = [
+  { label: 'Free Run',   action: 'freerun',    x: MENU_BX, y: H/2 - 90, w: MENU_BW, h: MENU_BH },
+  { label: 'Historique', action: 'historique', x: MENU_BX, y: H/2 - 42, w: MENU_BW, h: MENU_BH },
+  { label: 'Adventure',  action: 'adventure',  x: MENU_BX, y: H/2 +  6, w: MENU_BW, h: MENU_BH },
+  { label: 'Shop',       action: 'shop',       x: MENU_BX, y: H/2 + 68, w: MENU_BW, h: MENU_BH, icon: true },
+];
+
 canvas.width  = W;
 canvas.height = H;
 
 // ─────────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────────
-let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds, deadFrame, deadPage, prevTopScore;
+let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds, deadFrame, deadPage, prevTopScore, intro1Page;
 let mouseX = -1, mouseY = -1;
 let topScores = [];
 let currentScoreRank = -1;
@@ -52,6 +61,7 @@ function init() {
   bgBirds      = [];
   deadFrame    = 0;
   prevTopScore = topScores[topScores.length - 1] || 0;
+  intro1Page   = 1;
   bgClouds     = Array.from({ length: 7 }, () => ({
     x:     Math.random() * W,
     y:     CLOUD_Y_MIN + Math.random() * (CLOUD_Y_MAX - CLOUD_Y_MIN),
@@ -268,7 +278,11 @@ function flap() {
     return; // page 3 : géré par les boutons Yes/No
   }
   if (state === 'countdown') return;
-  if (state === 'intro1')   { state = 'intro2'; intro2Frame = 0; return; }
+  if (state === 'intro1') {
+    if (intro1Page === 1) { intro1Page = 2; return; }
+    if (intro1Page === 3) { intro1Page = 2; return; }
+    return; // page 2 : géré par handlePageBtn
+  }
   bird.vy = FLAP_VY;
 }
 
@@ -424,6 +438,47 @@ function hitBtn(cx, cy, b) {
   return cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h;
 }
 
+function drawLock(cx, cy, color) {
+  const S = 2;
+  // Corps (fond)
+  ctx.fillStyle = color;
+  ctx.fillRect(cx - 3*S, cy - S,   6*S, 5*S);
+  // Ombre bas + droite
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.fillRect(cx - 3*S, cy + 3*S, 6*S, S  );
+  ctx.fillRect(cx + 2*S, cy - S,   S,   4*S);
+  // Reflet haut + gauche
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.fillRect(cx - 3*S, cy - S,   6*S, S  );
+  ctx.fillRect(cx - 3*S, cy,       S,   4*S);
+  // Arceau (par-dessus le corps)
+  ctx.fillStyle = color;
+  ctx.fillRect(cx - 2*S, cy - 5*S, S,   4*S); // jambe gauche
+  ctx.fillRect(cx +   S, cy - 5*S, S,   4*S); // jambe droite
+  ctx.fillRect(cx - 2*S, cy - 5*S, 3*S, S  ); // barre haute
+  // Trou de serrure
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  ctx.fillRect(cx - S,   cy + S,   2*S, 2*S); // trou
+  ctx.fillRect(cx,       cy + 3*S, S,   S  ); // fente
+}
+
+function drawCoinStack(cx, cy) {
+  const ox = cx - 8;
+  // Couches inférieures (peintre : dessinées avant la pièce du dessus)
+  ctx.fillStyle = '#4a3200';
+  ctx.fillRect(ox, cy + 9, 15, 2);  // ombre basse
+  ctx.fillStyle = '#7a5a0a';
+  ctx.fillRect(ox, cy + 6, 15, 3);  // flanc pièce 3
+  ctx.fillStyle = '#a07c14';
+  ctx.fillRect(ox, cy + 4, 15, 2);  // dessus pièce 3
+  ctx.fillStyle = '#3a2600';
+  ctx.fillRect(ox, cy + 6, 15, 1);  // séparateur sombre
+  ctx.fillStyle = '#8a6810';
+  ctx.fillRect(ox, cy + 3, 15, 3);  // flanc pièce 2
+  // Pièce principale (recouvre le haut des couches)
+  sprCoinUI(cx, cy - 5);
+}
+
 function roundRect(x, y, w, h, r, fill) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -438,6 +493,23 @@ function roundRect(x, y, w, h, r, fill) {
   ctx.closePath();
   ctx.fillStyle = fill;
   ctx.fill();
+}
+
+function strokeRoundRect(x, y, w, h, r, color, lw) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y,     x + w, y + r,     r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h,     x, y + h - r,     r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y,         x + r, y,         r);
+  ctx.closePath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lw;
+  ctx.stroke();
 }
 
 function drawUI() {
@@ -502,17 +574,71 @@ function drawUI() {
   }
 
   if (state === 'intro1') {
-    roundRect(W/2 - 110, H/2 - 55, 220, 90, 8, 'rgba(0,0,0,0.45)');
-    ctx.fillStyle = '#ffe033';
-    ctx.font = 'bold 20px monospace';
-    ctx.fillText('FLAPPY WORLD', W/2, H/2 - 20);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '13px monospace';
-    ctx.fillText('Clic  /  Espace  /  Toucher', W/2, H/2 + 14);
+    if (intro1Page === 1) {
+      roundRect(W/2 - 110, H/2 - 55, 220, 90, 8, 'rgba(0,0,0,0.45)');
+      ctx.fillStyle = '#ffe033';
+      ctx.font = 'bold 20px monospace';
+      ctx.fillText('FLAPPY WORLD', W/2, H/2 - 20);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '13px monospace';
+      ctx.fillText('Clic  /  Espace  /  Toucher', W/2, H/2 + 14);
+
+    } else if (intro1Page === 2) {
+      roundRect(W/2 - 100, H/2 - 132, 200, 266, 10, 'rgba(0,0,0,0.55)');
+      ctx.fillStyle = '#ffe033';
+      ctx.font = 'bold 18px monospace';
+      ctx.fillText('FLAPPY WORLD', W/2, H/2 - 108);
+      for (const btn of MENU_BTNS) {
+        const disabled = btn.action === 'adventure';
+        const hov = !disabled && hitBtn(mouseX, mouseY, btn);
+        if (btn.icon) {
+          roundRect(btn.x, btn.y, btn.w, btn.h, 7, hov ? 'rgba(255,224,51,0.6)' : 'rgba(255,224,51,0.38)');
+          if (hov) {
+            ctx.save();
+            ctx.shadowColor = '#ffe033';
+            ctx.shadowBlur  = 16;
+            strokeRoundRect(btn.x, btn.y, btn.w, btn.h, 7, '#ffe033', 1.5);
+            ctx.restore();
+          }
+        } else {
+          roundRect(btn.x, btn.y, btn.w, btn.h, 7,
+            disabled ? 'rgba(255,255,255,0.06)' : hov ? 'rgba(255,224,51,0.18)' : 'rgba(255,255,255,0.07)');
+        }
+        ctx.font = 'bold 14px monospace';
+        ctx.fillStyle = btn.icon ? '#ffffff' : disabled ? '#888888' : hov ? '#ffe033' : '#ffffff';
+        ctx.fillText(btn.label, W/2, btn.y + btn.h / 2 + 5);
+      }
+      const backHov = hitBtn(mouseX, mouseY, BTN_BACK_I1);
+      ctx.fillStyle = backHov ? '#ffe033' : '#aaaaaa';
+      ctx.font = '12px monospace';
+      ctx.fillText('back', W/2, BTN_BACK_I1.y + 13);
+
+    } else {
+      roundRect(W/2 - 100, H/2 - 106, 200, 216, 10, 'rgba(0,0,0,0.55)');
+      ctx.fillStyle = '#ffe033';
+      ctx.font = 'bold 16px monospace';
+      ctx.fillText('TOP 10', W/2, H/2 - 88);
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(W/2 - 82, H/2 - 75);
+      ctx.lineTo(W/2 + 82, H/2 - 75);
+      ctx.stroke();
+      ctx.font = '13px monospace';
+      for (let i = 0; i < 10; i++) {
+        const ty  = H/2 - 60 + i * 16;
+        const val = topScores[i] !== undefined ? topScores[i] : '-';
+        ctx.fillStyle = topScores[i] !== undefined ? '#cccccc' : '#444444';
+        ctx.fillText(`${String(i + 1).padStart(2)}.   ${String(val).padStart(3)}`, W/2, ty);
+      }
+      ctx.fillStyle = '#aaaaaa';
+      ctx.font = '12px monospace';
+      ctx.fillText('Click to go back', W/2, H/2 + 98);
+    }
 
     ctx.fillStyle = '#ffffff';
     ctx.font = '11px monospace';
-    ctx.fillText('v0.08.1', W/2, H - 14); // versioning
+    ctx.fillText('v0.09.0', W/2, H - 14);
   }
 
   if (state === 'playing') {
@@ -691,10 +817,22 @@ function canvasPos(clientX, clientY) {
 }
 
 function handlePageBtn(cx, cy) {
+  if (state === 'intro1' && intro1Page === 2) {
+    if (hitBtn(cx, cy, BTN_BACK_I1)) { intro1Page = 1; return true; }
+    for (const btn of MENU_BTNS) {
+      if (hitBtn(cx, cy, btn)) {
+        if (btn.action === 'freerun')    { state = 'intro2'; intro2Frame = 0; }
+        if (btn.action === 'historique') { intro1Page = 3; }
+        return true;
+      }
+    }
+    return true;
+  }
+  if (state === 'intro1' && intro1Page === 3) { intro1Page = 2; return true; }
   if (state !== 'score' || deadPage !== 3 || deadFrame < 30) return false;
   if (hitBtn(cx, cy, BTN_YES)) { init(); state = 'countdown'; bird.vy = FLAP_VY; return true; }
   if (hitBtn(cx, cy, BTN_NO))  { init(); return true; }
-  return true; // page 3 : clic hors Yes/No ignoré
+  return true;
 }
 
 canvas.addEventListener('mousemove',  e => { [mouseX, mouseY] = canvasPos(e.clientX, e.clientY); });
