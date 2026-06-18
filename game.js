@@ -22,6 +22,9 @@ const BG_BIRD_MIN_Y  = 120; // hauteur min de spawn des oiseaux de fond — augm
 const CLOUD_Y_MIN    = 15;  // ← position Y minimale des nuages (haut de l'écran) — diminuer pour les remonter
 const CLOUD_Y_MAX    = 110; // ← position Y maximale des nuages (bas autorisé)    — diminuer pour les remonter
 
+const BTN_YES = { x: W/2 - 78, y: H/2 + 4, w: 70, h: 36 };
+const BTN_NO  = { x: W/2 +  8, y: H/2 + 4, w: 70, h: 36 };
+
 canvas.width  = W;
 canvas.height = H;
 
@@ -29,6 +32,7 @@ canvas.height = H;
 //  STATE
 // ─────────────────────────────────────────────
 let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds, deadFrame, deadPage, prevTopScore;
+let mouseX = -1, mouseY = -1;
 let topScores = [];
 let currentScoreRank = -1;
 let bgClouds = [];
@@ -258,7 +262,8 @@ function flap() {
   if (state === 'score') {
     if (deadFrame < 30) return;
     if (deadPage === 1) { deadPage = 2; deadFrame = 0; return; }
-    init(); state = 'countdown'; bird.vy = FLAP_VY; return;
+    if (deadPage === 2) { deadPage = 3; deadFrame = 0; return; }
+    return; // page 3 : géré par les boutons Yes/No
   }
   if (state === 'countdown') return;
   if (state === 'intro1')   { state = 'intro2'; intro2Frame = 0; return; }
@@ -413,6 +418,10 @@ function update() {
 //  RENDU UI
 // ─────────────────────────────────────────────
 
+function hitBtn(cx, cy, b) {
+  return cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h;
+}
+
 function roundRect(x, y, w, h, r, fill) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -498,6 +507,10 @@ function drawUI() {
     ctx.fillStyle = '#ffffff';
     ctx.font = '13px monospace';
     ctx.fillText('Clic  /  Espace  /  Toucher', W/2, H/2 + 14);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '11px monospace';
+    ctx.fillText('v0.08.0', W/2, H - 14);
   }
 
   if (state === 'playing') {
@@ -539,10 +552,10 @@ function drawUI() {
 
       ctx.fillStyle = '#aaaaaa';
       ctx.font = '12px monospace';
-      ctx.fillText('Click to play again', W/2, H/2 + 46);
+      ctx.fillText('Click to continue', W/2, H/2 + 46);
 
-    } else {
-      roundRect(W/2 - 100, H/2 - 105, 200, 215, 10, 'rgba(0,0,0,0.55)');
+    } else if (deadPage === 2) {
+      roundRect(W/2 - 100, H/2 - 105, 200, 222, 10, 'rgba(0,0,0,0.55)');
 
       ctx.fillStyle = '#ffe033';
       ctx.font = 'bold 16px monospace';
@@ -576,9 +589,42 @@ function drawUI() {
         }
       }
 
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(W/2 - 82, H/2 + 90);
+      ctx.lineTo(W/2 + 82, H/2 + 90);
+      ctx.stroke();
+
       ctx.fillStyle = '#aaaaaa';
       ctx.font = '12px monospace';
-      ctx.fillText('Click to play again', W/2, H/2 + 98);
+      ctx.fillText('Click to continue', W/2, H/2 + 107);
+
+    } else {
+      roundRect(W/2 - 90, H/2 - 50, 180, 105, 10, 'rgba(0,0,0,0.65)');
+
+      ctx.fillStyle = '#cccccc';
+      ctx.font = 'bold 18px monospace';
+      ctx.fillText('Try Again ?', W/2, H/2 - 20);
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(W/2 - 70, H/2 - 4);
+      ctx.lineTo(W/2 + 70, H/2 - 4);
+      ctx.stroke();
+
+      const yesHov = hitBtn(mouseX, mouseY, BTN_YES);
+      const noHov  = hitBtn(mouseX, mouseY, BTN_NO);
+
+      roundRect(BTN_YES.x, BTN_YES.y, BTN_YES.w, BTN_YES.h, 6, yesHov ? '#4a3e00' : '#2e2600');
+      ctx.fillStyle = yesHov ? '#ffe033' : '#ccb000';
+      ctx.font = 'bold 16px monospace';
+      ctx.fillText('Yes', BTN_YES.x + BTN_YES.w / 2, BTN_YES.y + 23);
+
+      roundRect(BTN_NO.x, BTN_NO.y, BTN_NO.w, BTN_NO.h, 6, noHov ? '#3a3a3a' : '#252525');
+      ctx.fillStyle = noHov ? '#cccccc' : '#888888';
+      ctx.fillText('No',  BTN_NO.x  + BTN_NO.w  / 2, BTN_NO.y  + 23);
     }
   }
 
@@ -644,10 +690,41 @@ function loop() {
 //  INPUTS
 // ─────────────────────────────────────────────
 
-canvas.addEventListener('click', flap);
-canvas.addEventListener('touchstart', e => { e.preventDefault(); flap(); }, { passive: false });
+function canvasPos(clientX, clientY) {
+  const r = canvas.getBoundingClientRect();
+  return [(clientX - r.left) * W / r.width, (clientY - r.top) * H / r.height];
+}
+
+function handlePageBtn(cx, cy) {
+  if (state !== 'score' || deadPage !== 3 || deadFrame < 30) return false;
+  if (hitBtn(cx, cy, BTN_YES)) { init(); state = 'countdown'; bird.vy = FLAP_VY; return true; }
+  if (hitBtn(cx, cy, BTN_NO))  { init(); return true; }
+  return true; // page 3 : clic hors Yes/No ignoré
+}
+
+canvas.addEventListener('mousemove',  e => { [mouseX, mouseY] = canvasPos(e.clientX, e.clientY); });
+canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
+
+canvas.addEventListener('click', e => {
+  const [cx, cy] = canvasPos(e.clientX, e.clientY);
+  if (!handlePageBtn(cx, cy)) flap();
+});
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  const [cx, cy] = canvasPos(t.clientX, t.clientY);
+  if (!handlePageBtn(cx, cy)) flap();
+}, { passive: false });
+
 document.addEventListener('keydown', e => {
-  if (e.code === 'Space' || e.code === 'ArrowUp') { e.preventDefault(); flap(); }
+  if (e.code === 'Space' || e.code === 'ArrowUp') {
+    e.preventDefault();
+    if (state === 'score' && deadPage === 3 && deadFrame >= 30) {
+      init(); state = 'countdown'; bird.vy = FLAP_VY; return;
+    }
+    flap();
+  }
 });
 
 // ─────────────────────────────────────────────
