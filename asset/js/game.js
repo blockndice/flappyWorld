@@ -638,7 +638,7 @@ function drawUI() {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = '11px monospace';
-    ctx.fillText('v0.09.0', W/2, H - 14);
+    ctx.fillText('v0.09.1', W/2, H - 14);
   }
 
   if (state === 'playing') {
@@ -659,40 +659,32 @@ function drawUI() {
 
   if (state === 'score') {
     if (deadPage === 1) {
-      // bordure + fond
-      roundRect(W/2 - 121, POP_CY - 71, 242, 142, 11, '#1e2a44');
-      roundRect(W/2 - 120, POP_CY - 70, 240, 140, 10, 'rgba(6,8,18,0.92)');
+      roundRect(W/2 - 120, POP_CY - 70, 240, 140, 10, 'rgba(0,0,0,0.55)');
 
-      // titre
-      ctx.font        = 'bold 26px monospace';
-      ctx.lineWidth   = 5;
-      ctx.strokeStyle = '#660011';
-      ctx.strokeText('GAME OVER', W/2, POP_CY - 32);
-      ctx.fillStyle   = '#ff4455';
+      ctx.fillStyle = '#ff4455';
+      ctx.font      = 'bold 24px monospace';
       ctx.fillText('GAME OVER', W/2, POP_CY - 32);
 
-      // score
       sprCoinUI(W/2 - 32, POP_CY + 14);
       ctx.fillStyle = '#ffffff';
-      ctx.font      = '18px monospace';
+      ctx.font      = '16px monospace';
       ctx.fillText(`× ${score}`, W/2 + 6, POP_CY + 20);
       if (score > 0 && score > prevTopScore) {
         const sw    = ctx.measureText(`× ${score}`).width;
         const lerpT = (Math.sin(coinTick * 0.05) + 1) / 2;
-        ctx.font      = 'bold 11px monospace';
+        ctx.font      = 'bold 13px monospace';
         ctx.fillStyle = `rgb(255,${Math.round(160 + lerpT * 64)},${Math.round(lerpT * 51)})`;
         ctx.textAlign = 'left';
-        ctx.fillText('record', W/2 + 6 + sw / 2 + 6, POP_CY + 20);
+        ctx.fillText('record', W/2 + 6 + sw / 2 + 8, POP_CY + 20);
         ctx.textAlign = 'center';
       }
 
-      ctx.fillStyle = '#7a7a99';
-      ctx.font      = '11px monospace';
+      ctx.fillStyle = '#aaaaaa';
+      ctx.font      = '12px monospace';
       ctx.fillText('Click to continue', W/2, POP_CY + 58);
 
     } else if (deadPage === 2) {
-      roundRect(W/2 - 101, POP_CY - 112, 202, 240, 11, '#1e2a44');
-      roundRect(W/2 - 100, POP_CY - 111, 200, 238, 10, 'rgba(6,8,18,0.92)');
+      roundRect(W/2 - 100, POP_CY - 111, 200, 238, 10, 'rgba(0,0,0,0.55)');
 
       ctx.font        = 'bold 15px monospace';
       ctx.lineWidth   = 3;
@@ -722,15 +714,14 @@ function drawUI() {
         }
       }
 
-      ctx.fillStyle = '#7a7a99';
-      ctx.font      = '11px monospace';
+      ctx.fillStyle = '#aaaaaa';
+      ctx.font      = '12px monospace';
       ctx.fillText('Click to continue', W/2, POP_CY + 112);
 
     } else {
-      roundRect(W/2 - 91, POP_CY - 51, 182, 108, 11, '#1e2a44');
-      roundRect(W/2 - 90, POP_CY - 50, 180, 106, 10, 'rgba(6,8,18,0.92)');
+      roundRect(W/2 - 90, POP_CY - 50, 180, 106, 10, 'rgba(0,0,0,0.55)');
 
-      ctx.fillStyle = '#aaaacc';
+      ctx.fillStyle = '#ffffff';
       ctx.font      = 'bold 17px monospace';
       ctx.fillText('Try Again ?', W/2, POP_CY - 22);
 
