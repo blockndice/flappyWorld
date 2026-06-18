@@ -22,8 +22,10 @@ const BG_BIRD_MIN_Y  = 120; // hauteur min de spawn des oiseaux de fond — augm
 const CLOUD_Y_MIN    = 15;  // ← position Y minimale des nuages (haut de l'écran) — diminuer pour les remonter
 const CLOUD_Y_MAX    = 110; // ← position Y maximale des nuages (bas autorisé)    — diminuer pour les remonter
 
-const BTN_YES = { x: W/2 - 78, y: H/2 + 4, w: 70, h: 36 };
-const BTN_NO  = { x: W/2 +  8, y: H/2 + 4, w: 70, h: 36 };
+const POP_CY  = 205; // centre vertical des pop-ups — remonter pour déplacer vers le haut
+
+const BTN_YES = { x: W/2 - 78, y: POP_CY + 16, w: 70, h: 34 };
+const BTN_NO  = { x: W/2 +  8, y: POP_CY + 16, w: 70, h: 34 };
 
 canvas.width  = W;
 canvas.height = H;
@@ -510,7 +512,7 @@ function drawUI() {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = '11px monospace';
-    ctx.fillText('v0.08.0', W/2, H - 14);
+    ctx.fillText('v0.08.1', W/2, H - 14); // versioning
   }
 
   if (state === 'playing') {
@@ -531,100 +533,93 @@ function drawUI() {
 
   if (state === 'score') {
     if (deadPage === 1) {
-      roundRect(W/2 - 120, H/2 - 75, 240, 130, 10, 'rgba(0,0,0,0.55)');
-      ctx.fillStyle = '#ff4455';
-      ctx.font = 'bold 24px monospace';
-      ctx.fillText('GAME OVER', W/2, H/2 - 36);
+      // bordure + fond
+      roundRect(W/2 - 121, POP_CY - 71, 242, 142, 11, '#1e2a44');
+      roundRect(W/2 - 120, POP_CY - 70, 240, 140, 10, 'rgba(6,8,18,0.92)');
 
-      sprCoinUI(W/2 - 30, H/2 + 10);
+      // titre
+      ctx.font        = 'bold 26px monospace';
+      ctx.lineWidth   = 5;
+      ctx.strokeStyle = '#660011';
+      ctx.strokeText('GAME OVER', W/2, POP_CY - 32);
+      ctx.fillStyle   = '#ff4455';
+      ctx.fillText('GAME OVER', W/2, POP_CY - 32);
+
+      // score
+      sprCoinUI(W/2 - 32, POP_CY + 14);
       ctx.fillStyle = '#ffffff';
-      ctx.font = '16px monospace';
-      ctx.fillText(`× ${score}`, W/2 + 4, H/2 + 16);
+      ctx.font      = '18px monospace';
+      ctx.fillText(`× ${score}`, W/2 + 6, POP_CY + 20);
       if (score > 0 && score > prevTopScore) {
         const sw    = ctx.measureText(`× ${score}`).width;
         const lerpT = (Math.sin(coinTick * 0.05) + 1) / 2;
-        ctx.font      = 'bold 13px monospace';
-        ctx.fillStyle = `rgb(255, ${Math.round(160 + lerpT * 64)}, ${Math.round(lerpT * 51)})`;
+        ctx.font      = 'bold 11px monospace';
+        ctx.fillStyle = `rgb(255,${Math.round(160 + lerpT * 64)},${Math.round(lerpT * 51)})`;
         ctx.textAlign = 'left';
-        ctx.fillText('record', W/2 + 4 + sw / 2 + 8, H/2 + 16);
+        ctx.fillText('record', W/2 + 6 + sw / 2 + 6, POP_CY + 20);
         ctx.textAlign = 'center';
       }
 
-      ctx.fillStyle = '#aaaaaa';
-      ctx.font = '12px monospace';
-      ctx.fillText('Click to continue', W/2, H/2 + 46);
+      ctx.fillStyle = '#7a7a99';
+      ctx.font      = '11px monospace';
+      ctx.fillText('Click to continue', W/2, POP_CY + 58);
 
     } else if (deadPage === 2) {
-      roundRect(W/2 - 100, H/2 - 105, 200, 222, 10, 'rgba(0,0,0,0.55)');
+      roundRect(W/2 - 101, POP_CY - 112, 202, 240, 11, '#1e2a44');
+      roundRect(W/2 - 100, POP_CY - 111, 200, 238, 10, 'rgba(6,8,18,0.92)');
 
-      ctx.fillStyle = '#ffe033';
-      ctx.font = 'bold 16px monospace';
-      ctx.fillText('TOP 10', W/2, H/2 - 86);
-
-      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(W/2 - 82, H/2 - 74);
-      ctx.lineTo(W/2 + 82, H/2 - 74);
-      ctx.stroke();
+      ctx.font        = 'bold 15px monospace';
+      ctx.lineWidth   = 3;
+      ctx.strokeStyle = '#8a6000';
+      ctx.strokeText('TOP 10', W/2, POP_CY - 90);
+      ctx.fillStyle   = '#ffe033';
+      ctx.fillText('TOP 10', W/2, POP_CY - 90);
 
       ctx.font = '13px monospace';
       for (let i = 0; i < 10; i++) {
-        const ty  = H/2 - 60 + i * 16;
+        const ty  = POP_CY - 65 + i * 16;
         const val = topScores[i] !== undefined ? topScores[i] : '-';
         if (i === currentScoreRank) {
           const lerpT = (Math.sin(coinTick * 0.05) + 1) / 2;
-          ctx.fillStyle = `rgb(255, ${Math.round(160 + lerpT * 64)}, ${Math.round(lerpT * 51)})`;
+          ctx.fillStyle = `rgb(255,${Math.round(160 + lerpT * 64)},${Math.round(lerpT * 51)})`;
           const entry = `${String(i + 1).padStart(2)}.   ${String(val).padStart(3)}`;
           ctx.fillText(entry, W/2, ty);
           const entryW = ctx.measureText(entry).width;
-          ctx.font = 'bold 10px monospace';
+          ctx.font      = 'bold 10px monospace';
           ctx.textAlign = 'left';
-          ctx.fillText('new', W/2 + entryW / 2 + 8, ty);
+          ctx.fillText('new', W/2 + entryW / 2 + 6, ty);
           ctx.textAlign = 'center';
-          ctx.font = '13px monospace';
+          ctx.font      = '13px monospace';
         } else {
-          ctx.fillStyle = topScores[i] !== undefined ? '#cccccc' : '#444444';
+          ctx.fillStyle = topScores[i] !== undefined ? '#cccccc' : '#333344';
           ctx.fillText(`${String(i + 1).padStart(2)}.   ${String(val).padStart(3)}`, W/2, ty);
         }
       }
 
-      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(W/2 - 82, H/2 + 90);
-      ctx.lineTo(W/2 + 82, H/2 + 90);
-      ctx.stroke();
-
-      ctx.fillStyle = '#aaaaaa';
-      ctx.font = '12px monospace';
-      ctx.fillText('Click to continue', W/2, H/2 + 107);
+      ctx.fillStyle = '#7a7a99';
+      ctx.font      = '11px monospace';
+      ctx.fillText('Click to continue', W/2, POP_CY + 112);
 
     } else {
-      roundRect(W/2 - 90, H/2 - 50, 180, 105, 10, 'rgba(0,0,0,0.65)');
+      roundRect(W/2 - 91, POP_CY - 51, 182, 108, 11, '#1e2a44');
+      roundRect(W/2 - 90, POP_CY - 50, 180, 106, 10, 'rgba(6,8,18,0.92)');
 
-      ctx.fillStyle = '#cccccc';
-      ctx.font = 'bold 18px monospace';
-      ctx.fillText('Try Again ?', W/2, H/2 - 20);
-
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(W/2 - 70, H/2 - 4);
-      ctx.lineTo(W/2 + 70, H/2 - 4);
-      ctx.stroke();
+      ctx.fillStyle = '#aaaacc';
+      ctx.font      = 'bold 17px monospace';
+      ctx.fillText('Try Again ?', W/2, POP_CY - 22);
 
       const yesHov = hitBtn(mouseX, mouseY, BTN_YES);
       const noHov  = hitBtn(mouseX, mouseY, BTN_NO);
 
-      roundRect(BTN_YES.x, BTN_YES.y, BTN_YES.w, BTN_YES.h, 6, yesHov ? '#4a3e00' : '#2e2600');
-      ctx.fillStyle = yesHov ? '#ffe033' : '#ccb000';
-      ctx.font = 'bold 16px monospace';
-      ctx.fillText('Yes', BTN_YES.x + BTN_YES.w / 2, BTN_YES.y + 23);
+      roundRect(BTN_YES.x, BTN_YES.y, BTN_YES.w, BTN_YES.h, 7, yesHov ? '#4a3e00' : '#2e2500');
+      ctx.fillStyle = yesHov ? '#ffe033' : '#b89000';
+      ctx.font      = 'bold 15px monospace';
+      ctx.fillText('Yes', BTN_YES.x + BTN_YES.w / 2, BTN_YES.y + 22);
 
-      roundRect(BTN_NO.x, BTN_NO.y, BTN_NO.w, BTN_NO.h, 6, noHov ? '#3a3a3a' : '#252525');
-      ctx.fillStyle = noHov ? '#cccccc' : '#888888';
-      ctx.fillText('No',  BTN_NO.x  + BTN_NO.w  / 2, BTN_NO.y  + 23);
+      roundRect(BTN_NO.x, BTN_NO.y, BTN_NO.w, BTN_NO.h, 7, noHov ? '#2e2e3a' : '#1a1a22');
+      ctx.fillStyle = noHov ? '#ccccdd' : '#666677';
+      ctx.font      = 'bold 15px monospace';
+      ctx.fillText('No',  BTN_NO.x  + BTN_NO.w  / 2, BTN_NO.y  + 22);
     }
   }
 
@@ -739,5 +734,41 @@ if (localStorage.getItem('fw_ver') !== SAVE_VER) {
 topScores = JSON.parse(localStorage.getItem('fw_top')) ?? [55, 50, 45, 40, 35, 30, 25, 20, 15, 10];
 best      = parseInt(localStorage.getItem('fw_best') || '0');
 coinTick  = 0;
+
+(function setFavicon() {
+  const fc   = document.createElement('canvas');
+  fc.width   = fc.height = 32;
+  const f    = fc.getContext('2d');
+  const s    = 0.85, cx = 14, cy = 16; // scale + centre (décalé à gauche pour équilibrer le bec)
+
+  f.save();
+  f.translate(cx, cy);
+  f.rotate(-0.55);
+  f.scale(s, s);
+
+  f.fillStyle = '#f5d600';
+  f.fillRect(-BIRD_W/2, -BIRD_H/2, BIRD_W, BIRD_H);
+  f.fillStyle = '#fff3a0';
+  f.fillRect(-BIRD_W/2 + 4, BIRD_H/2 - 8, BIRD_W - 10, 6);
+  f.fillStyle = '#d4a800';
+  f.fillRect(-BIRD_W/2, 0, 10, 7);
+  f.fillStyle = '#ffffff';
+  f.fillRect(3, -BIRD_H/2 + 3, 9, 9);
+  f.fillStyle = '#111111';
+  f.fillRect(7, -BIRD_H/2 + 6, 4, 4);
+  f.fillStyle = '#ff8800';
+  f.fillRect(BIRD_W/2 - 2, -3, 9, 5);
+  f.fillStyle = '#cc6600';
+  f.fillRect(BIRD_W/2 - 2,  1, 9, 2);
+
+  f.restore();
+
+  const link = document.createElement('link');
+  link.rel   = 'icon';
+  link.type  = 'image/png';
+  link.href  = fc.toDataURL();
+  document.head.appendChild(link);
+})();
+
 init();
 loop();

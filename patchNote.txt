@@ -15,6 +15,7 @@ v0.05.1 = amélioration score + score top 10
 v0.06.0 = animation impact collision (shake + freeze + éjection oiseau aléatoire)
 v0.07.0 = amélioration décors (nuage + soleil)
 v0.08.0 = affichage version + stop où continue
+v0.08.1 = amélioration Pop-Up Game Over + icone onglet navigateur
 
 ** next step **
 distribution de reward sur une période
