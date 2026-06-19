@@ -21,6 +21,7 @@ v0.09.1 = rectif design pop-up game over
 v0.10.0 = immersion plein écran bureau
 v0.10.1 = immersion mobile 
 v0.11.0 = Fenêtre Shop
+v0.11.1 = Fenêtre Shop Terminé
 
 ** next step **
 sound design

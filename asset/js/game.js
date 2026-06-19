@@ -29,7 +29,10 @@ const BTN_NO  = { x: W/2 +  8, y: POP_CY + 16, w: 70, h: 34 };
 
 const MENU_BW = 176, MENU_BH = 36, MENU_BX = W/2 - 88;
 const BTN_BACK_I1   = { x: W/2 - 26, y: H/2 + 112, w: 52, h: 20 };
-const BTN_BACK_SHOP = { x: W/2 - 26, y: H - 52,    w: 52, h: 20 };
+const BTN_BACK_SHOP = { x: 16,        y: H - 40,    w: 64, h: 28 };
+const BTN_SHOP_PREV = { x: 136,       y: H - 40,    w: 28, h: 28 };
+const BTN_SHOP_NEXT = { x: 236,       y: H - 40,    w: 28, h: 28 };
+const BTN_SHOP_BUY  = { x: W - 80,    y: 245,       w: 64, h: 28 };
 const MENU_BTNS = [
   { label: 'Free Run',   action: 'freerun',    x: MENU_BX, y: H/2 - 90, w: MENU_BW, h: MENU_BH },
   { label: 'Historique', action: 'historique', x: MENU_BX, y: H/2 - 42, w: MENU_BW, h: MENU_BH },
@@ -52,6 +55,8 @@ let totalCoins = 0;
 let shopZoom = 1;
 let shopPanX = 0;
 let shopPanY = 0;
+let shopPage         = 0;
+let selectedShopItem = null;
 
 function init() {
   bird    = { x: 90, y: H / 2 - 90, vy: 0, vx: 0, rot: 0, scale: 1 };
@@ -665,33 +670,88 @@ function drawUI() {
       ctx.fillText(totalCoins, 34, popY + 30);
       ctx.textAlign = 'center';
 
-      // version atténuée
-      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      // bouton BUY (visible uniquement si un article est sélectionné)
+      if (selectedShopItem) {
+        const buyHov = hitBtn(mouseX, mouseY, BTN_SHOP_BUY);
+        const b = BTN_SHOP_BUY;
+        roundRect(b.x, b.y, b.w, b.h, 6, buyHov ? '#c87800' : '#a05e00');
+        ctx.save();
+        if (buyHov) { ctx.shadowColor = '#ffaa00'; ctx.shadowBlur = 10; }
+        strokeRoundRect(b.x, b.y, b.w, b.h, 6, buyHov ? '#ffe033' : '#cc8800', 1.5);
+        ctx.restore();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 13px monospace';
+        ctx.fillText('BUY', b.x + b.w / 2, b.y + b.h / 2 + 5);
+      }
+
+      // grille articles (2 col × 3 lignes = 6 par page)
+      const COLS = 2, CARD_W = 182, CARD_H = 75, GAP_X = 10, GAP_Y = 8;
+      const GRID_X = 13, GRID_Y = popY + 54;
+      const totalPages = Math.ceil(SHOP_ITEMS.length / 6);
+      const pageItems  = SHOP_ITEMS.slice(shopPage * 6, shopPage * 6 + 6);
+      pageItems.forEach((item, i) => {
+        const col = i % COLS;
+        const row = Math.floor(i / COLS);
+        const cx  = GRID_X + col * (CARD_W + GAP_X);
+        const cy  = GRID_Y + row * (CARD_H + GAP_Y);
+        const cardHov = mouseX >= cx && mouseX <= cx + CARD_W && mouseY >= cy && mouseY <= cy + CARD_H;
+        roundRect(cx, cy, CARD_W, CARD_H, 8, 'rgba(255,255,255,0.07)');
+        if (cardHov) strokeRoundRect(cx, cy, CARD_W, CARD_H, 8, '#ffe033', 1);
+        if (item.type === 'skin') {
+          ctx.save();
+          ctx.translate(cx + CARD_W / 2, cy + 28);
+          ctx.scale(1.6, 1.6);
+          sprBird(0, 0, 0, item.pal);
+          ctx.restore();
+        }
+        // nom — bas centre
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(item.name, cx + CARD_W / 2, cy + CARD_H - 9);
+        // prix — bas gauche avec marge
+        sprCoinUI(cx + 16, cy + CARD_H - 15);
+        ctx.font = '10px monospace';
+        ctx.fillStyle = '#ffe033';
+        ctx.textAlign = 'left';
+        ctx.fillText(item.price, cx + 28, cy + CARD_H - 11);
+        ctx.textAlign = 'center';
+      });
+
+      // pagination bas-droite
+      const pvHov = hitBtn(mouseX, mouseY, BTN_SHOP_PREV);
+      const nxHov = hitBtn(mouseX, mouseY, BTN_SHOP_NEXT);
+      const pv = BTN_SHOP_PREV, nx = BTN_SHOP_NEXT;
+      roundRect(pv.x, pv.y, pv.w, pv.h, 6, shopPage > 0 ? (pvHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)') : 'rgba(255,255,255,0.03)');
+      roundRect(nx.x, nx.y, nx.w, nx.h, 6, shopPage < totalPages - 1 ? (nxHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)') : 'rgba(255,255,255,0.03)');
+      ctx.font = '14px monospace';
+      ctx.fillStyle = shopPage > 0 ? '#ffffff' : 'rgba(255,255,255,0.25)';
+      ctx.fillText('‹', pv.x + pv.w / 2, pv.y + pv.h / 2 + 5);
+      ctx.fillStyle = shopPage < totalPages - 1 ? '#ffffff' : 'rgba(255,255,255,0.25)';
+      ctx.fillText('›', nx.x + nx.w / 2, nx.y + nx.h / 2 + 5);
+      ctx.fillStyle = '#aaaaaa';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.11.0', W/2, H - 14);
+      ctx.fillText(`${shopPage + 1} / ${totalPages}`, (pv.x + pv.w + nx.x) / 2, pv.y + pv.h / 2 + 5);
 
       // back
       const bkHov = hitBtn(mouseX, mouseY, BTN_BACK_SHOP);
-      ctx.fillStyle = bkHov ? '#ffe033' : '#aaaaaa';
-      ctx.font = '12px monospace';
-      ctx.fillText('back', W/2, BTN_BACK_SHOP.y + 13);
+      const bk = BTN_BACK_SHOP;
+      roundRect(bk.x, bk.y, bk.w, bk.h, 6, bkHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)');
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '13px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText('back', bk.x + bk.w / 2 - ctx.measureText('back').width / 2, bk.y + bk.h / 2 + 5);
+      ctx.textAlign = 'center';
     }
 
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.10.1', W/2, H - 14);
+      ctx.fillText('v0.11.1', W/2, H - 14);
     }
   }
 
   if (state === 'playing') {
-    // portefeuille haut-gauche
-    sprCoinUI(18, 22);
-    ctx.font = 'bold 13px monospace';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'left';
-    ctx.fillText(totalCoins, 32, 26);
-    ctx.textAlign = 'center';
 
     // pièce à gauche, score centré à droite — espace pour 3 chiffres
     sprCoinUI(W/2 - 36, 48);
@@ -878,7 +938,7 @@ function handlePageBtn(cx, cy) {
       if (hitBtn(cx, cy, btn)) {
         if (btn.action === 'freerun')    { state = 'intro2'; intro2Frame = 0; }
         if (btn.action === 'historique') { intro1Page = 3; }
-        if (btn.action === 'shop')       { intro1Page = 4; shopZoom = 2; shopPanX = 0; shopPanY = 54; }
+        if (btn.action === 'shop')       { intro1Page = 4; shopZoom = 2; shopPanX = 0; shopPanY = 54; shopPage = 0; }
         return true;
       }
     }
@@ -886,7 +946,22 @@ function handlePageBtn(cx, cy) {
   }
   if (state === 'intro1' && intro1Page === 3) { intro1Page = 2; return true; }
   if (state === 'intro1' && intro1Page === 4) {
-    if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; return true; }
+    if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; selectedShopItem = null; return true; }
+    if (selectedShopItem && hitBtn(cx, cy, BTN_SHOP_BUY)) { /* achat à implémenter */ return true; }
+    const totalPages = Math.ceil(SHOP_ITEMS.length / 6);
+    if (hitBtn(cx, cy, BTN_SHOP_PREV) && shopPage > 0)              { shopPage--; selectedShopItem = null; return true; }
+    if (hitBtn(cx, cy, BTN_SHOP_NEXT) && shopPage < totalPages - 1) { shopPage++; selectedShopItem = null; return true; }
+    // clic sur une card
+    const pageItems = SHOP_ITEMS.slice(shopPage * 6, shopPage * 6 + 6);
+    const cw = 182, ch = 75, gx = 10, gy = 8, gsx = 13, gsy = 235 + 54;
+    for (let i = 0; i < pageItems.length; i++) {
+      const cardX = gsx + (i % 2) * (cw + gx);
+      const cardY = gsy + Math.floor(i / 2) * (ch + gy);
+      if (cx >= cardX && cx <= cardX + cw && cy >= cardY && cy <= cardY + ch) {
+        selectedShopItem = selectedShopItem === pageItems[i] ? null : pageItems[i];
+        return true;
+      }
+    }
     return true;
   }
   if (state !== 'score' || deadPage !== 3 || deadFrame < 30) return false;
