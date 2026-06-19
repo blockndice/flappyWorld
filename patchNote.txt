@@ -20,6 +20,7 @@ v0.09.0 = Menu titre intégré à l'intro1
 v0.09.1 = rectif design pop-up game over
 v0.10.0 = immersion plein écran bureau
 v0.10.1 = immersion mobile 
+v0.11.0 = Fenêtre Shop
 
 ** next step **
 sound design

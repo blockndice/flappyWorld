@@ -28,7 +28,8 @@ const BTN_YES = { x: W/2 - 78, y: POP_CY + 16, w: 70, h: 34 };
 const BTN_NO  = { x: W/2 +  8, y: POP_CY + 16, w: 70, h: 34 };
 
 const MENU_BW = 176, MENU_BH = 36, MENU_BX = W/2 - 88;
-const BTN_BACK_I1 = { x: W/2 - 26, y: H/2 + 112, w: 52, h: 20 };
+const BTN_BACK_I1   = { x: W/2 - 26, y: H/2 + 112, w: 52, h: 20 };
+const BTN_BACK_SHOP = { x: W/2 - 26, y: H - 52,    w: 52, h: 20 };
 const MENU_BTNS = [
   { label: 'Free Run',   action: 'freerun',    x: MENU_BX, y: H/2 - 90, w: MENU_BW, h: MENU_BH },
   { label: 'Historique', action: 'historique', x: MENU_BX, y: H/2 - 42, w: MENU_BW, h: MENU_BH },
@@ -47,6 +48,10 @@ let mouseX = -1, mouseY = -1;
 let topScores = [];
 let currentScoreRank = -1;
 let bgClouds = [];
+let totalCoins = 0;
+let shopZoom = 1;
+let shopPanX = 0;
+let shopPanY = 0;
 
 function init() {
   bird    = { x: 90, y: H / 2 - 90, vy: 0, vx: 0, rot: 0, scale: 1 };
@@ -402,6 +407,8 @@ function update() {
       if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
         p.collected = true;
         score++;
+        totalCoins++;
+        localStorage.setItem('fw_coins', totalCoins);
         if (score > best) { best = score; localStorage.setItem('fw_best', best); }
       }
     }
@@ -613,7 +620,7 @@ function drawUI() {
       ctx.font = '12px monospace';
       ctx.fillText('back', W/2, BTN_BACK_I1.y + 13);
 
-    } else {
+    } else if (intro1Page === 3) {
       roundRect(W/2 - 100, H/2 - 106, 200, 216, 10, 'rgba(0,0,0,0.55)');
       ctx.fillStyle = '#ffe033';
       ctx.font = 'bold 16px monospace';
@@ -634,14 +641,58 @@ function drawUI() {
       ctx.fillStyle = '#aaaaaa';
       ctx.font = '12px monospace';
       ctx.fillText('Click to go back', W/2, H/2 + 98);
+
+    } else if (intro1Page === 4) {
+      // fond avec coins arrondis en haut uniquement
+      const popY = 235, popR = 18;
+      ctx.beginPath();
+      ctx.moveTo(0 + popR, popY);
+      ctx.lineTo(W - popR, popY);
+      ctx.arcTo(W, popY, W, popY + popR, popR);
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.lineTo(0, popY + popR);
+      ctx.arcTo(0, popY, 0 + popR, popY, popR);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fill();
+
+      // indicateur pièces haut-gauche du popup
+      sprCoinUI(18, popY + 26);
+      ctx.font = 'bold 13px monospace';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'left';
+      ctx.fillText(totalCoins, 34, popY + 30);
+      ctx.textAlign = 'center';
+
+      // version atténuée
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.font = '11px monospace';
+      ctx.fillText('v0.11.0', W/2, H - 14);
+
+      // back
+      const bkHov = hitBtn(mouseX, mouseY, BTN_BACK_SHOP);
+      ctx.fillStyle = bkHov ? '#ffe033' : '#aaaaaa';
+      ctx.font = '12px monospace';
+      ctx.fillText('back', W/2, BTN_BACK_SHOP.y + 13);
     }
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '11px monospace';
-    ctx.fillText('v0.10.1', W/2, H - 14);
+    if (intro1Page !== 4) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '11px monospace';
+      ctx.fillText('v0.10.1', W/2, H - 14);
+    }
   }
 
   if (state === 'playing') {
+    // portefeuille haut-gauche
+    sprCoinUI(18, 22);
+    ctx.font = 'bold 13px monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.fillText(totalCoins, 32, 26);
+    ctx.textAlign = 'center';
+
     // pièce à gauche, score centré à droite — espace pour 3 chiffres
     sprCoinUI(W/2 - 36, 48);
     ctx.font = 'bold 36px monospace';
@@ -764,6 +815,16 @@ function render() {
     const mag = (11 - deadFrame) * 1.1;
     ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
   }
+
+  // zoom + pan de scène intro1 (UI dessinée après, sans transform)
+  const doZoom = state === 'intro1' && (shopZoom !== 1 || shopPanX !== 0 || shopPanY !== 0);
+  if (doZoom) {
+    ctx.save();
+    ctx.translate(W / 2 + shopPanX, H / 2 + shopPanY);
+    ctx.scale(shopZoom, shopZoom);
+    ctx.translate(-W / 2, -H / 2);
+  }
+
   sprBg();
   pipes.forEach(p => {
     sprPipe(p.x, p.topH, p.topH + PIPE_GAP);
@@ -776,6 +837,9 @@ function render() {
   ctx.scale(bird.scale, bird.scale);
   sprBird(0, 0, bird.rot);
   ctx.restore();
+
+  if (doZoom) ctx.restore(); // fin zoom scène — UI reste à l'échelle normale
+
   drawUI();
   ctx.restore();
 }
@@ -814,12 +878,17 @@ function handlePageBtn(cx, cy) {
       if (hitBtn(cx, cy, btn)) {
         if (btn.action === 'freerun')    { state = 'intro2'; intro2Frame = 0; }
         if (btn.action === 'historique') { intro1Page = 3; }
+        if (btn.action === 'shop')       { intro1Page = 4; shopZoom = 2; shopPanX = 0; shopPanY = 54; }
         return true;
       }
     }
     return true;
   }
   if (state === 'intro1' && intro1Page === 3) { intro1Page = 2; return true; }
+  if (state === 'intro1' && intro1Page === 4) {
+    if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; return true; }
+    return true;
+  }
   if (state !== 'score' || deadPage !== 3 || deadFrame < 30) return false;
   if (hitBtn(cx, cy, BTN_YES)) { init(); state = 'countdown'; bird.vy = FLAP_VY; return true; }
   if (hitBtn(cx, cy, BTN_NO))  { init(); return true; }
@@ -851,6 +920,7 @@ document.addEventListener('keydown', e => {
   }
 });
 
+
 // ─────────────────────────────────────────────
 //  LANCEMENT
 // ─────────────────────────────────────────────
@@ -860,9 +930,10 @@ if (localStorage.getItem('fw_ver') !== SAVE_VER) {
   localStorage.removeItem('fw_best');
   localStorage.setItem('fw_ver', SAVE_VER);
 }
-topScores = JSON.parse(localStorage.getItem('fw_top')) ?? [55, 50, 45, 40, 35, 30, 25, 20, 15, 10];
-best      = parseInt(localStorage.getItem('fw_best') || '0');
-coinTick  = 0;
+topScores  = JSON.parse(localStorage.getItem('fw_top')) ?? [55, 50, 45, 40, 35, 30, 25, 20, 15, 10];
+best       = parseInt(localStorage.getItem('fw_best')   || '0');
+totalCoins = parseInt(localStorage.getItem('fw_coins')  || '0');
+coinTick   = 0;
 
 (function setFavicon() {
   const fc   = document.createElement('canvas');
