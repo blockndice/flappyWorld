@@ -1,16 +1,56 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-body {
+html, body {
   background: #0d0d1a;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* Étend sous les encoches / barre de statut iOS */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+body {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  overflow: hidden;
+  height: 100dvh;
+}
+
+#wrap {
+  position: relative;
+  line-height: 0;
+  overflow: hidden; /* coupe le débordement horizontal sur mobile */
 }
 
 canvas {
   display: block;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+#fsBtn {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+#fsBtn:hover { opacity: 1; }
+#fsBtn svg   { display: block; }
+
+/* Cache le bouton plein écran sur petits écrans phone uniquement */
+@media (pointer: coarse) and (max-width: 500px) {
+  #fsBtn { display: none; }
 }

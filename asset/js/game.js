@@ -638,7 +638,7 @@ function drawUI() {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = '11px monospace';
-    ctx.fillText('v0.09.1', W/2, H - 14);
+    ctx.fillText('v0.10.0', W/2, H - 14);
   }
 
   if (state === 'playing') {
@@ -898,6 +898,46 @@ coinTick  = 0;
   link.href  = fc.toDataURL();
   document.head.appendChild(link);
 })();
+
+// ─────────────────────────────────────────────
+//  RESPONSIVE + PLEIN ÉCRAN
+// ─────────────────────────────────────────────
+
+function updateScale() {
+  const scale = Math.min(window.innerWidth / W, window.innerHeight / H);
+  canvas.style.width  = `${W * scale}px`;
+  canvas.style.height = `${H * scale}px`;
+}
+window.addEventListener('resize', updateScale);
+window.addEventListener('orientationchange', () => setTimeout(updateScale, 200));
+updateScale();
+
+const fsBtn = document.getElementById('fsBtn');
+
+const SVG_EXPAND  = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 4.5V1H4.5M8.5 1H12V4.5M12 8.5V12H8.5M4.5 12H1V8.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const SVG_COMPRESS = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M4.5 1V4.5H1M12 4.5H8.5V1M8.5 12V8.5H12M1 8.5H4.5V12" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function isFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function updateFsIcon() {
+  fsBtn.innerHTML = isFullscreen() ? SVG_COMPRESS : SVG_EXPAND;
+}
+
+fsBtn.addEventListener('click', () => {
+  if (!isFullscreen()) {
+    const el = document.documentElement;
+    (el.requestFullscreen || el.webkitRequestFullscreen)?.call(el);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+  }
+});
+
+document.addEventListener('fullscreenchange',       () => { updateScale(); updateFsIcon(); });
+document.addEventListener('webkitfullscreenchange', () => { updateScale(); updateFsIcon(); });
+
+updateFsIcon();
 
 init();
 loop();

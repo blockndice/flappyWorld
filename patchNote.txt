@@ -18,8 +18,10 @@ v0.08.0 = affichage version + stop où continue
 v0.08.1 = amélioration Pop-Up Game Over + icone onglet navigateur
 v0.09.0 = Menu titre intégré à l'intro1
 v0.09.1 = rectif design pop-up game over
+v0.10.0 = immersion plein écran bureau
 
 ** next step **
+sound design
 distribution de reward sur une période
 profil joueur 
 boutique -> échange pièce collecter contre 
