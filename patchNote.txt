@@ -24,6 +24,7 @@ v0.11.0 = Fenêtre Shop
 v0.11.1 = Fenêtre Shop Terminé
 v0.11.2 = Shop feature trainnée
 v0.11.3 = Fenêtre Shop page confirme achat 
+v0.11.4 = préparation swap token + replacement bouton BUY
 
 ** next step **
 sound design

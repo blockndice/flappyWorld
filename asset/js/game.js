@@ -32,7 +32,8 @@ const BTN_BACK_I1   = { x: W/2 - 26, y: H/2 + 112, w: 52, h: 20 };
 const BTN_BACK_SHOP = { x: 16,        y: H - 40,    w: 64, h: 28 };
 const BTN_SHOP_PREV = { x: 136,       y: H - 40,    w: 28, h: 28 };
 const BTN_SHOP_NEXT = { x: 236,       y: H - 40,    w: 28, h: 28 };
-const BTN_SHOP_BUY  = { x: W - 80,    y: 245,       w: 64, h: 28 };
+const BTN_SHOP_BUY  = { x: W/2 - 32,  y: 245,       w: 64, h: 28 };
+const BTN_SHOP_GEMS = { x: W - 86,    y: 248,       w: 72, h: 24 };
 const CONFIRM_BUY    = { x: W / 2 - 131, y: H - 72, w: 96, h: 44 };
 const CONFIRM_CANCEL = { x: W / 2 + 35,  y: H - 72, w: 96, h: 44 };
 const MENU_BTNS = [
@@ -54,6 +55,7 @@ let topScores = [];
 let currentScoreRank = -1;
 let bgClouds = [];
 let totalCoins = 0;
+let totalGems  = 0;
 let shopZoom = 1;
 let shopPanX = 0;
 let shopPanY = 0;
@@ -525,6 +527,59 @@ function drawIconJumpRing(cx, cy) {
   ctx.restore();
 }
 
+function sprGemCube(x, y) {
+  const S = 2;
+  // face du dessus (bleu clair)
+  ctx.fillStyle = '#66ddff';
+  ctx.fillRect(x - 3*S, y - 4*S, 6*S, 2*S);
+  // face avant (bleu moyen)
+  ctx.fillStyle = '#1a8fd1';
+  ctx.fillRect(x - 3*S, y - 2*S, 6*S, 4*S);
+  // face droite (bleu foncé)
+  ctx.fillStyle = '#0d5fa0';
+  ctx.fillRect(x + 3*S, y - 3*S, 2*S, 5*S);
+  // reflet face avant
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  ctx.fillRect(x - 3*S, y - 2*S, 2*S, 3*S);
+}
+
+function drawGemBtn(popY) {
+  const b   = BTN_SHOP_GEMS;
+  const hov = hitBtn(mouseX, mouseY, b);
+  // fond
+  roundRect(b.x, b.y, b.w, b.h, 6, hov ? 'rgba(30,100,200,0.35)' : 'rgba(10,50,150,0.28)');
+  // bordure tournante (marching ants horaire)
+  ctx.save();
+  ctx.setLineDash([6, 4]);
+  ctx.lineDashOffset = -(coinTick * 0.15);
+  ctx.strokeStyle = hov ? '#88ddff' : '#3399ff';
+  ctx.lineWidth = 1.5;
+  const r = 6;
+  ctx.beginPath();
+  ctx.moveTo(b.x + r, b.y);
+  ctx.lineTo(b.x + b.w - r, b.y);
+  ctx.arcTo(b.x + b.w, b.y,       b.x + b.w, b.y + r,       r);
+  ctx.lineTo(b.x + b.w, b.y + b.h - r);
+  ctx.arcTo(b.x + b.w, b.y + b.h, b.x + b.w - r, b.y + b.h, r);
+  ctx.lineTo(b.x + r,       b.y + b.h);
+  ctx.arcTo(b.x,       b.y + b.h, b.x, b.y + b.h - r,       r);
+  ctx.lineTo(b.x,       b.y + r);
+  ctx.arcTo(b.x,       b.y,       b.x + r, b.y,              r);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+  // swap | cube | chiffre
+  const midY = b.y + b.h / 2;
+  ctx.font = 'bold 10px monospace';
+  ctx.fillStyle = '#cceeff';
+  ctx.textAlign = 'left';
+  ctx.fillText('SWAP', b.x + 6, midY + 4);
+  sprGemCube(b.x + 44, midY);
+  ctx.font = 'bold 12px monospace';
+  ctx.fillText(totalGems, b.x + 58, midY + 5);
+  ctx.textAlign = 'center';
+}
+
 function drawCoinStack(cx, cy) {
   const ox = cx - 8;
   // Couches inférieures (peintre : dessinées avant la pièce du dessus)
@@ -721,6 +776,9 @@ function drawUI() {
       ctx.fillText(totalCoins, 34, popY + 30);
       ctx.textAlign = 'center';
 
+      // bouton gemmes haut-droite du popup
+      drawGemBtn(popY);
+
       if (shopConfirm && selectedShopItem) {
         // ── CONFIRM PAGE ────────────────────────────────────
         const item       = selectedShopItem;
@@ -852,7 +910,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.11.3', W/2, H - 14);
+      ctx.fillText('v0.11.4', W/2, H - 14);
     }
   }
 
