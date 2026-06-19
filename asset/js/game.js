@@ -294,6 +294,7 @@ function flap() {
     return; // page 2 : géré par handlePageBtn
   }
   bird.vy = FLAP_VY;
+  jumpSpawn(bird.x, bird.y);
 }
 
 function update() {
@@ -301,10 +302,12 @@ function update() {
     waitFrame++;
     groundX  = (groundX - PIPE_SPEED) % 20;
     bird.x = W / 2;
-    if (waitFrame % 37 === 1) bird.vy = -(GRAVITY * 19);
+    if (waitFrame % 37 === 1) { bird.vy = -(GRAVITY * 19); jumpSpawn(bird.x, bird.y); }
     bird.vy += GRAVITY;
     bird.y  += bird.vy;
     bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y, H - GROUND_H - BIRD_H / 2 - 8));
+    trailTick(bird.x, bird.y);
+    jumpTick();
     bird.rot = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
 
     if (Math.random() < 0.012) {
@@ -392,6 +395,8 @@ function update() {
   if (state !== 'playing') return;
 
   frame++;
+  trailTick(bird.x, bird.y);
+  jumpTick();
 
   bird.vy  += GRAVITY;
   bird.y   += bird.vy;
@@ -472,6 +477,49 @@ function drawLock(cx, cy, color) {
   ctx.fillStyle = 'rgba(0,0,0,0.65)';
   ctx.fillRect(cx - S,   cy + S,   2*S, 2*S); // trou
   ctx.fillRect(cx,       cy + 3*S, S,   S  ); // fente
+}
+
+function drawIconRainbow(cx, cy) {
+  const colors = ['#ff3333','#ff8800','#ffee00','#33cc33','#3399ff','#aa44ff','#ff3333','#ff8800','#ffee00','#33cc33'];
+  const S = 4, GAP = 11, N = 10;
+  const startX = cx - ((N - 1) * GAP) / 2;
+  for (let i = 0; i < N; i++) {
+    ctx.fillStyle = colors[i];
+    ctx.fillRect(startX + i * GAP - S / 2, cy - S / 2, S, S);
+  }
+}
+
+function drawIconCloud(cx, cy) {
+  const S = 4, GAP = 11, N = 10;
+  const startX = cx - ((N - 1) * GAP) / 2;
+  for (let i = 0; i < N; i++) {
+    const a = 0.35 + (i / (N - 1)) * 0.6;
+    ctx.fillStyle = `rgba(255,255,255,${a})`;
+    ctx.fillRect(startX + i * GAP - S / 2, cy - S / 2, S, S);
+  }
+}
+
+function drawIconJumpRing(cx, cy) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  // anneau extérieur blanc
+  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(0, 4, 14, 0, Math.PI * 2);
+  ctx.stroke();
+  // anneau intérieur plus fin
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(0, 4, 9, 0, Math.PI * 2);
+  ctx.stroke();
+  // flèche vers le haut (indique le saut)
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillRect(-1, -14, 3, 12); // tige
+  ctx.fillRect(-5, -10, 11, 3); // pointe gauche
+  ctx.fillRect(-3,  -13, 7, 3); // pointe milieu
+  ctx.restore();
 }
 
 function drawCoinStack(cx, cy) {
@@ -694,18 +742,26 @@ function drawUI() {
         const row = Math.floor(i / COLS);
         const cx  = GRID_X + col * (CARD_W + GAP_X);
         const cy  = GRID_Y + row * (CARD_H + GAP_Y);
-        const cardHov = mouseX >= cx && mouseX <= cx + CARD_W && mouseY >= cy && mouseY <= cy + CARD_H;
+        const cardHov = !item.lock && mouseX >= cx && mouseX <= cx + CARD_W && mouseY >= cy && mouseY <= cy + CARD_H;
         roundRect(cx, cy, CARD_W, CARD_H, 8, 'rgba(255,255,255,0.07)');
         if (cardHov) strokeRoundRect(cx, cy, CARD_W, CARD_H, 8, '#ffe033', 1);
-        if (item.type === 'skin') {
+        if (item.lock) {
+          drawLock(cx + CARD_W / 2, cy + 28, '#8B4513');
+        } else if (item.type === 'skin') {
           ctx.save();
           ctx.translate(cx + CARD_W / 2, cy + 28);
           ctx.scale(1.6, 1.6);
           sprBird(0, 0, 0, item.pal);
           ctx.restore();
+        } else if (item.type === 'trail' && item.trail === 'rainbow') {
+          drawIconRainbow(cx + CARD_W / 2, cy + 28);
+        } else if (item.type === 'trail' && item.trail === 'cloud') {
+          drawIconCloud(cx + CARD_W / 2, cy + 28);
+        } else if (item.type === 'jump' && item.jump === 'ring') {
+          drawIconJumpRing(cx + CARD_W / 2, cy + 28);
         }
         // nom — bas centre
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = item.lock ? '#666666' : '#ffffff';
         ctx.font = 'bold 10px monospace';
         ctx.textAlign = 'center';
         ctx.fillText(item.name, cx + CARD_W / 2, cy + CARD_H - 9);
@@ -747,7 +803,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.11.1', W/2, H - 14);
+      ctx.fillText('v0.11.2', W/2, H - 14);
     }
   }
 
@@ -892,10 +948,12 @@ function render() {
   });
   sprGround(groundX);
   if (state === 'intro1') renderBgBirds();
+  trailDraw();
+  jumpDraw();
   ctx.save();
   ctx.translate(bird.x, bird.y);
   ctx.scale(bird.scale, bird.scale);
-  sprBird(0, 0, bird.rot);
+  sprBird(0, 0, bird.rot, getPreviewPal());
   ctx.restore();
 
   if (doZoom) ctx.restore(); // fin zoom scène — UI reste à l'échelle normale
@@ -946,11 +1004,11 @@ function handlePageBtn(cx, cy) {
   }
   if (state === 'intro1' && intro1Page === 3) { intro1Page = 2; return true; }
   if (state === 'intro1' && intro1Page === 4) {
-    if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; selectedShopItem = null; return true; }
+    if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; selectedShopItem = null; clearPreview(); return true; }
     if (selectedShopItem && hitBtn(cx, cy, BTN_SHOP_BUY)) { /* achat à implémenter */ return true; }
     const totalPages = Math.ceil(SHOP_ITEMS.length / 6);
-    if (hitBtn(cx, cy, BTN_SHOP_PREV) && shopPage > 0)              { shopPage--; selectedShopItem = null; return true; }
-    if (hitBtn(cx, cy, BTN_SHOP_NEXT) && shopPage < totalPages - 1) { shopPage++; selectedShopItem = null; return true; }
+    if (hitBtn(cx, cy, BTN_SHOP_PREV) && shopPage > 0)              { shopPage--; selectedShopItem = null; clearPreview(); return true; }
+    if (hitBtn(cx, cy, BTN_SHOP_NEXT) && shopPage < totalPages - 1) { shopPage++; selectedShopItem = null; clearPreview(); return true; }
     // clic sur une card
     const pageItems = SHOP_ITEMS.slice(shopPage * 6, shopPage * 6 + 6);
     const cw = 182, ch = 75, gx = 10, gy = 8, gsx = 13, gsy = 235 + 54;
@@ -958,7 +1016,10 @@ function handlePageBtn(cx, cy) {
       const cardX = gsx + (i % 2) * (cw + gx);
       const cardY = gsy + Math.floor(i / 2) * (ch + gy);
       if (cx >= cardX && cx <= cardX + cw && cy >= cardY && cy <= cardY + ch) {
-        selectedShopItem = selectedShopItem === pageItems[i] ? null : pageItems[i];
+        if (!pageItems[i].lock) {
+          if (selectedShopItem === pageItems[i]) { selectedShopItem = null; clearPreview(); }
+          else { selectedShopItem = pageItems[i]; setPreview(selectedShopItem); }
+        }
         return true;
       }
     }

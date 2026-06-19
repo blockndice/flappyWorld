@@ -22,6 +22,7 @@ v0.10.0 = immersion plein écran bureau
 v0.10.1 = immersion mobile 
 v0.11.0 = Fenêtre Shop
 v0.11.1 = Fenêtre Shop Terminé
+v0.11.2 = Shop feature trainnée
 
 ** next step **
 sound design
