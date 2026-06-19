@@ -100,6 +100,7 @@ function jumpSpawn(bx, by) {
 
 function jumpTick() {
   for (let i = jumpEffects.length - 1; i >= 0; i--) {
+    jumpEffects[i].x -= 2;
     jumpEffects[i].frame++;
     if (jumpEffects[i].frame > 18) jumpEffects.splice(i, 1);
   }

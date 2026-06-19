@@ -33,6 +33,8 @@ const BTN_BACK_SHOP = { x: 16,        y: H - 40,    w: 64, h: 28 };
 const BTN_SHOP_PREV = { x: 136,       y: H - 40,    w: 28, h: 28 };
 const BTN_SHOP_NEXT = { x: 236,       y: H - 40,    w: 28, h: 28 };
 const BTN_SHOP_BUY  = { x: W - 80,    y: 245,       w: 64, h: 28 };
+const CONFIRM_BUY    = { x: W / 2 - 131, y: H - 72, w: 96, h: 44 };
+const CONFIRM_CANCEL = { x: W / 2 + 35,  y: H - 72, w: 96, h: 44 };
 const MENU_BTNS = [
   { label: 'Free Run',   action: 'freerun',    x: MENU_BX, y: H/2 - 90, w: MENU_BW, h: MENU_BH },
   { label: 'Historique', action: 'historique', x: MENU_BX, y: H/2 - 42, w: MENU_BW, h: MENU_BH },
@@ -57,6 +59,7 @@ let shopPanX = 0;
 let shopPanY = 0;
 let shopPage         = 0;
 let selectedShopItem = null;
+let shopConfirm      = false;
 
 function init() {
   bird    = { x: 90, y: H / 2 - 90, vy: 0, vx: 0, rot: 0, scale: 1 };
@@ -718,92 +721,138 @@ function drawUI() {
       ctx.fillText(totalCoins, 34, popY + 30);
       ctx.textAlign = 'center';
 
-      // bouton BUY (visible uniquement si un article est sélectionné)
-      if (selectedShopItem) {
-        const buyHov = hitBtn(mouseX, mouseY, BTN_SHOP_BUY);
-        const b = BTN_SHOP_BUY;
-        roundRect(b.x, b.y, b.w, b.h, 6, buyHov ? '#c87800' : '#a05e00');
-        ctx.save();
-        if (buyHov) { ctx.shadowColor = '#ffaa00'; ctx.shadowBlur = 10; }
-        strokeRoundRect(b.x, b.y, b.w, b.h, 6, buyHov ? '#ffe033' : '#cc8800', 1.5);
-        ctx.restore();
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 13px monospace';
-        ctx.fillText('BUY', b.x + b.w / 2, b.y + b.h / 2 + 5);
-      }
+      if (shopConfirm && selectedShopItem) {
+        // ── CONFIRM PAGE ────────────────────────────────────
+        const item       = selectedShopItem;
+        const canAfford  = totalCoins >= item.price;
+        const CW = 280, CH = 120;
+        const cardX = W / 2 - CW / 2;
+        const cardY = popY + 90;
 
-      // grille articles (2 col × 3 lignes = 6 par page)
-      const COLS = 2, CARD_W = 182, CARD_H = 75, GAP_X = 10, GAP_Y = 8;
-      const GRID_X = 13, GRID_Y = popY + 54;
-      const totalPages = Math.ceil(SHOP_ITEMS.length / 6);
-      const pageItems  = SHOP_ITEMS.slice(shopPage * 6, shopPage * 6 + 6);
-      pageItems.forEach((item, i) => {
-        const col = i % COLS;
-        const row = Math.floor(i / COLS);
-        const cx  = GRID_X + col * (CARD_W + GAP_X);
-        const cy  = GRID_Y + row * (CARD_H + GAP_Y);
-        const cardHov = !item.lock && mouseX >= cx && mouseX <= cx + CARD_W && mouseY >= cy && mouseY <= cy + CARD_H;
-        roundRect(cx, cy, CARD_W, CARD_H, 8, 'rgba(255,255,255,0.07)');
-        if (cardHov) strokeRoundRect(cx, cy, CARD_W, CARD_H, 8, '#ffe033', 1);
-        if (item.lock) {
-          drawLock(cx + CARD_W / 2, cy + 28, '#8B4513');
-        } else if (item.type === 'skin') {
-          ctx.save();
-          ctx.translate(cx + CARD_W / 2, cy + 28);
-          ctx.scale(1.6, 1.6);
-          sprBird(0, 0, 0, item.pal);
-          ctx.restore();
+        // card agrandie centrée
+        roundRect(cardX, cardY, CW, CH, 10, 'rgba(255,255,255,0.10)');
+        strokeRoundRect(cardX, cardY, CW, CH, 10, '#ffe033', 2);
+        if (item.type === 'skin') {
+          ctx.save(); ctx.translate(cardX + CW / 2, cardY + 44); ctx.scale(2.4, 2.4);
+          sprBird(0, 0, 0, item.pal); ctx.restore();
         } else if (item.type === 'trail' && item.trail === 'rainbow') {
-          drawIconRainbow(cx + CARD_W / 2, cy + 28);
+          drawIconRainbow(cardX + CW / 2, cardY + 50);
         } else if (item.type === 'trail' && item.trail === 'cloud') {
-          drawIconCloud(cx + CARD_W / 2, cy + 28);
-        } else if (item.type === 'jump' && item.jump === 'ring') {
-          drawIconJumpRing(cx + CARD_W / 2, cy + 28);
+          drawIconCloud(cardX + CW / 2, cardY + 50);
+        } else if (item.type === 'jump') {
+          drawIconJumpRing(cardX + CW / 2, cardY + 50);
         }
-        // nom — bas centre
-        ctx.fillStyle = item.lock ? '#666666' : '#ffffff';
-        ctx.font = 'bold 10px monospace';
+        ctx.font = 'bold 13px monospace';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(item.name, cardX + CW / 2, cardY + CH - 12);
+        sprCoinUI(cardX + 20, cardY + CH - 20);
+        ctx.font = '12px monospace'; ctx.fillStyle = '#ffe033'; ctx.textAlign = 'left';
+        ctx.fillText(item.price, cardX + 36, cardY + CH - 14);
         ctx.textAlign = 'center';
-        ctx.fillText(item.name, cx + CARD_W / 2, cy + CARD_H - 9);
-        // prix — bas gauche avec marge
-        sprCoinUI(cx + 16, cy + CARD_H - 15);
-        ctx.font = '10px monospace';
-        ctx.fillStyle = '#ffe033';
-        ctx.textAlign = 'left';
-        ctx.fillText(item.price, cx + 28, cy + CARD_H - 11);
+
+        if (!canAfford) {
+          ctx.font = 'bold 14px monospace';
+          ctx.fillStyle = '#ff4444';
+          ctx.fillText('Pas assez de pièces !', W / 2, cardY + CH + 28);
+        }
+
+        // boutons bas de l'écran
+        const cancelHov = hitBtn(mouseX, mouseY, CONFIRM_CANCEL);
+        if (canAfford) {
+          const buyHov = hitBtn(mouseX, mouseY, CONFIRM_BUY);
+          roundRect(CONFIRM_BUY.x, CONFIRM_BUY.y, CONFIRM_BUY.w, CONFIRM_BUY.h, 7, buyHov ? '#c87800' : '#a05e00');
+          strokeRoundRect(CONFIRM_BUY.x, CONFIRM_BUY.y, CONFIRM_BUY.w, CONFIRM_BUY.h, 7, buyHov ? '#ffe033' : '#cc8800', 2);
+          ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px monospace';
+          ctx.fillText('BUY', CONFIRM_BUY.x + CONFIRM_BUY.w / 2, CONFIRM_BUY.y + CONFIRM_BUY.h / 2 + 5);
+        }
+        const cancelX = canAfford ? CONFIRM_CANCEL.x : W / 2 - CONFIRM_CANCEL.w / 2;
+        roundRect(cancelX, CONFIRM_CANCEL.y, CONFIRM_CANCEL.w, CONFIRM_CANCEL.h, 7, cancelHov ? '#c0392b' : '#922b21');
+        strokeRoundRect(cancelX, CONFIRM_CANCEL.y, CONFIRM_CANCEL.w, CONFIRM_CANCEL.h, 7, cancelHov ? '#ff6b6b' : '#e74c3c', 2);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px monospace';
+        ctx.fillText('CANCEL', cancelX + CONFIRM_CANCEL.w / 2, CONFIRM_CANCEL.y + CONFIRM_CANCEL.h / 2 + 5);
+
+      } else {
+        // ── VUE GRILLE ──────────────────────────────────────
+        // bouton BUY (visible uniquement si un article est sélectionné)
+        if (selectedShopItem) {
+          const buyHov = hitBtn(mouseX, mouseY, BTN_SHOP_BUY);
+          const b = BTN_SHOP_BUY;
+          roundRect(b.x, b.y, b.w, b.h, 6, buyHov ? '#c87800' : '#a05e00');
+          ctx.save();
+          if (buyHov) { ctx.shadowColor = '#ffaa00'; ctx.shadowBlur = 10; }
+          strokeRoundRect(b.x, b.y, b.w, b.h, 6, buyHov ? '#ffe033' : '#cc8800', 1.5);
+          ctx.restore();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 13px monospace';
+          ctx.fillText('BUY', b.x + b.w / 2, b.y + b.h / 2 + 5);
+        }
+
+        // grille articles (2 col × 3 lignes = 6 par page)
+        const COLS = 2, CARD_W = 182, CARD_H = 75, GAP_X = 10, GAP_Y = 8;
+        const GRID_X = 13, GRID_Y = popY + 54;
+        const totalPages = Math.ceil(SHOP_ITEMS.length / 6);
+        const pageItems  = SHOP_ITEMS.slice(shopPage * 6, shopPage * 6 + 6);
+        pageItems.forEach((item, i) => {
+          const col = i % COLS;
+          const row = Math.floor(i / COLS);
+          const cx  = GRID_X + col * (CARD_W + GAP_X);
+          const cy  = GRID_Y + row * (CARD_H + GAP_Y);
+          const cardSelected = selectedShopItem && selectedShopItem.id === item.id;
+          roundRect(cx, cy, CARD_W, CARD_H, 8, 'rgba(255,255,255,0.07)');
+          if (cardSelected) strokeRoundRect(cx, cy, CARD_W, CARD_H, 8, '#ffe033', 1.5);
+          if (item.lock) {
+            drawLock(cx + CARD_W / 2, cy + 28, '#8B4513');
+          } else if (item.type === 'skin') {
+            ctx.save();
+            ctx.translate(cx + CARD_W / 2, cy + 28);
+            ctx.scale(1.6, 1.6);
+            sprBird(0, 0, 0, item.pal);
+            ctx.restore();
+          } else if (item.type === 'trail' && item.trail === 'rainbow') {
+            drawIconRainbow(cx + CARD_W / 2, cy + 28);
+          } else if (item.type === 'trail' && item.trail === 'cloud') {
+            drawIconCloud(cx + CARD_W / 2, cy + 28);
+          } else if (item.type === 'jump' && item.jump === 'ring') {
+            drawIconJumpRing(cx + CARD_W / 2, cy + 28);
+          }
+          ctx.fillStyle = item.lock ? '#666666' : '#ffffff';
+          ctx.font = 'bold 10px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(item.name, cx + CARD_W / 2, cy + CARD_H - 9);
+          sprCoinUI(cx + 16, cy + CARD_H - 15);
+          ctx.font = '10px monospace'; ctx.fillStyle = '#ffe033'; ctx.textAlign = 'left';
+          ctx.fillText(item.price, cx + 28, cy + CARD_H - 11);
+          ctx.textAlign = 'center';
+        });
+
+        // pagination
+        const pvHov = hitBtn(mouseX, mouseY, BTN_SHOP_PREV);
+        const nxHov = hitBtn(mouseX, mouseY, BTN_SHOP_NEXT);
+        const pv = BTN_SHOP_PREV, nx = BTN_SHOP_NEXT;
+        roundRect(pv.x, pv.y, pv.w, pv.h, 6, shopPage > 0 ? (pvHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)') : 'rgba(255,255,255,0.03)');
+        roundRect(nx.x, nx.y, nx.w, nx.h, 6, shopPage < totalPages - 1 ? (nxHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)') : 'rgba(255,255,255,0.03)');
+        ctx.font = '14px monospace';
+        ctx.fillStyle = shopPage > 0 ? '#ffffff' : 'rgba(255,255,255,0.25)';
+        ctx.fillText('‹', pv.x + pv.w / 2, pv.y + pv.h / 2 + 5);
+        ctx.fillStyle = shopPage < totalPages - 1 ? '#ffffff' : 'rgba(255,255,255,0.25)';
+        ctx.fillText('›', nx.x + nx.w / 2, nx.y + nx.h / 2 + 5);
+        ctx.fillStyle = '#aaaaaa'; ctx.font = '11px monospace';
+        ctx.fillText(`${shopPage + 1} / ${totalPages}`, (pv.x + pv.w + nx.x) / 2, pv.y + pv.h / 2 + 5);
+
+        // back
+        const bkHov = hitBtn(mouseX, mouseY, BTN_BACK_SHOP);
+        const bk = BTN_BACK_SHOP;
+        roundRect(bk.x, bk.y, bk.w, bk.h, 6, bkHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)');
+        ctx.fillStyle = '#ffffff'; ctx.font = '13px monospace'; ctx.textAlign = 'left';
+        ctx.fillText('back', bk.x + bk.w / 2 - ctx.measureText('back').width / 2, bk.y + bk.h / 2 + 5);
         ctx.textAlign = 'center';
-      });
-
-      // pagination bas-droite
-      const pvHov = hitBtn(mouseX, mouseY, BTN_SHOP_PREV);
-      const nxHov = hitBtn(mouseX, mouseY, BTN_SHOP_NEXT);
-      const pv = BTN_SHOP_PREV, nx = BTN_SHOP_NEXT;
-      roundRect(pv.x, pv.y, pv.w, pv.h, 6, shopPage > 0 ? (pvHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)') : 'rgba(255,255,255,0.03)');
-      roundRect(nx.x, nx.y, nx.w, nx.h, 6, shopPage < totalPages - 1 ? (nxHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)') : 'rgba(255,255,255,0.03)');
-      ctx.font = '14px monospace';
-      ctx.fillStyle = shopPage > 0 ? '#ffffff' : 'rgba(255,255,255,0.25)';
-      ctx.fillText('‹', pv.x + pv.w / 2, pv.y + pv.h / 2 + 5);
-      ctx.fillStyle = shopPage < totalPages - 1 ? '#ffffff' : 'rgba(255,255,255,0.25)';
-      ctx.fillText('›', nx.x + nx.w / 2, nx.y + nx.h / 2 + 5);
-      ctx.fillStyle = '#aaaaaa';
-      ctx.font = '11px monospace';
-      ctx.fillText(`${shopPage + 1} / ${totalPages}`, (pv.x + pv.w + nx.x) / 2, pv.y + pv.h / 2 + 5);
-
-      // back
-      const bkHov = hitBtn(mouseX, mouseY, BTN_BACK_SHOP);
-      const bk = BTN_BACK_SHOP;
-      roundRect(bk.x, bk.y, bk.w, bk.h, 6, bkHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)');
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '13px monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText('back', bk.x + bk.w / 2 - ctx.measureText('back').width / 2, bk.y + bk.h / 2 + 5);
-      ctx.textAlign = 'center';
+      }
     }
 
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.11.2', W/2, H - 14);
+      ctx.fillText('v0.11.3', W/2, H - 14);
     }
   }
 
@@ -1004,11 +1053,29 @@ function handlePageBtn(cx, cy) {
   }
   if (state === 'intro1' && intro1Page === 3) { intro1Page = 2; return true; }
   if (state === 'intro1' && intro1Page === 4) {
-    if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; selectedShopItem = null; clearPreview(); return true; }
-    if (selectedShopItem && hitBtn(cx, cy, BTN_SHOP_BUY)) { /* achat à implémenter */ return true; }
+    // ── vue confirmation ──
+    if (shopConfirm && selectedShopItem) {
+      const item    = selectedShopItem;
+      const CARD_H  = 75;
+      const popY    = 235;
+      const cardY   = popY + 70;
+      const _canAfford  = totalCoins >= selectedShopItem.price;
+      const _cancelX    = _canAfford ? CONFIRM_CANCEL.x : W / 2 - CONFIRM_CANCEL.w / 2;
+      const btnCancelC  = { ...CONFIRM_CANCEL, x: _cancelX };
+      if (hitBtn(cx, cy, CONFIRM_BUY) && _canAfford) {
+        // TODO : déduire totalCoins, marquer comme acheté
+        shopConfirm = false; selectedShopItem = null; clearPreview();
+        return true;
+      }
+      if (hitBtn(cx, cy, btnCancelC)) { shopConfirm = false; return true; }
+      return true;
+    }
+    // ── vue grille ──
+    if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
+    if (selectedShopItem && hitBtn(cx, cy, BTN_SHOP_BUY)) { shopConfirm = true; return true; }
     const totalPages = Math.ceil(SHOP_ITEMS.length / 6);
-    if (hitBtn(cx, cy, BTN_SHOP_PREV) && shopPage > 0)              { shopPage--; selectedShopItem = null; clearPreview(); return true; }
-    if (hitBtn(cx, cy, BTN_SHOP_NEXT) && shopPage < totalPages - 1) { shopPage++; selectedShopItem = null; clearPreview(); return true; }
+    if (hitBtn(cx, cy, BTN_SHOP_PREV) && shopPage > 0)              { shopPage--; selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
+    if (hitBtn(cx, cy, BTN_SHOP_NEXT) && shopPage < totalPages - 1) { shopPage++; selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
     // clic sur une card
     const pageItems = SHOP_ITEMS.slice(shopPage * 6, shopPage * 6 + 6);
     const cw = 182, ch = 75, gx = 10, gy = 8, gsx = 13, gsy = 235 + 54;
@@ -1017,7 +1084,7 @@ function handlePageBtn(cx, cy) {
       const cardY = gsy + Math.floor(i / 2) * (ch + gy);
       if (cx >= cardX && cx <= cardX + cw && cy >= cardY && cy <= cardY + ch) {
         if (!pageItems[i].lock) {
-          if (selectedShopItem === pageItems[i]) { selectedShopItem = null; clearPreview(); }
+          if (selectedShopItem && selectedShopItem.id === pageItems[i].id) { selectedShopItem = null; clearPreview(); }
           else { selectedShopItem = pageItems[i]; setPreview(selectedShopItem); }
         }
         return true;
