@@ -638,7 +638,7 @@ function drawUI() {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = '11px monospace';
-    ctx.fillText('v0.10.0', W/2, H - 14);
+    ctx.fillText('v0.10.1', W/2, H - 14);
   }
 
   if (state === 'playing') {
@@ -904,9 +904,20 @@ coinTick  = 0;
 // ─────────────────────────────────────────────
 
 function updateScale() {
-  const scale = Math.min(window.innerWidth / W, window.innerHeight / H);
-  canvas.style.width  = `${W * scale}px`;
-  canvas.style.height = `${H * scale}px`;
+  const mobile = window.matchMedia('(pointer: coarse)').matches;
+  if (mobile) {
+    const scale = window.innerHeight / H;
+    canvas.style.width           = `${W}px`;
+    canvas.style.height          = `${H}px`;
+    canvas.style.transform       = `scale(${scale})`;
+    canvas.style.transformOrigin = 'center center';
+  } else {
+    canvas.style.transform       = '';
+    canvas.style.transformOrigin = '';
+    const scale = Math.min(window.innerWidth / W, window.innerHeight / H);
+    canvas.style.width  = `${W * scale}px`;
+    canvas.style.height = `${H * scale}px`;
+  }
 }
 window.addEventListener('resize', updateScale);
 window.addEventListener('orientationchange', () => setTimeout(updateScale, 200));

@@ -50,6 +50,17 @@ canvas {
 #fsBtn:hover { opacity: 1; }
 #fsBtn svg   { display: block; }
 
+/* Mobile : wrap = plein écran, canvas centré via transform (pas de déformation layout) */
+@media (pointer: coarse) {
+  #wrap {
+    width: 100vw;
+    height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
 /* Cache le bouton plein écran sur petits écrans phone uniquement */
 @media (pointer: coarse) and (max-width: 500px) {
   #fsBtn { display: none; }
