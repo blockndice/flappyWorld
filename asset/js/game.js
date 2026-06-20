@@ -304,7 +304,7 @@ function flap() {
     return; // page 2 : géré par handlePageBtn
   }
   bird.vy = FLAP_VY;
-  playSound('jump');
+  playSound(_activeJumpSnd() || 'jump');
   jumpSpawn(bird.x, bird.y);
 }
 
@@ -427,7 +427,7 @@ function update() {
       const dy = bird.y - p.coinY;
       if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
         p.collected = true;
-        playSound('coin');
+        playSound(score === prevTopScore ? 'coinRecord' : 'coin');
         score++;
         totalCoins++;
         localStorage.setItem('fw_coins', totalCoins);
@@ -526,11 +526,55 @@ function drawIconJumpRing(cx, cy) {
   ctx.beginPath();
   ctx.arc(0, 4, 9, 0, Math.PI * 2);
   ctx.stroke();
-  // flèche vers le haut (indique le saut)
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.fillRect(-1, -14, 3, 12); // tige
-  ctx.fillRect(-5, -10, 11, 3); // pointe gauche
-  ctx.fillRect(-3,  -13, 7, 3); // pointe milieu
+  ctx.restore();
+}
+
+function drawIconSndJump(cx, cy) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.fillStyle = '#aaee22';
+  // corps du haut-parleur
+  ctx.fillRect(-10, -5, 6, 10);
+  // cône
+  ctx.beginPath();
+  ctx.moveTo(-4, -7); ctx.lineTo(4, -12);
+  ctx.lineTo(4, 12);  ctx.lineTo(-4, 7);
+  ctx.closePath();
+  ctx.fill();
+  // ondes sonores
+  ctx.strokeStyle = '#aaee22';
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 3; i++) {
+    const r = 8 + i * 5;
+    ctx.globalAlpha = 1 - i * 0.25;
+    ctx.beginPath();
+    ctx.arc(4, 0, r, -Math.PI * 0.5, Math.PI * 0.5);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawIconFart(cx, cy) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  // explosion en étoile jaune-vert
+  const BLOBS = [
+    [0, -14], [10, -10], [14, 0], [10, 10], [0, 14], [-10, 10], [-14, 0], [-10, -10],
+  ];
+  ctx.fillStyle = '#aaee22';
+  for (const [bx, by] of BLOBS) {
+    ctx.beginPath();
+    ctx.arc(bx, by, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // centre plus grand
+  ctx.globalAlpha = 0.7;
+  ctx.beginPath();
+  ctx.arc(0, 0, 7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
   ctx.restore();
 }
 
@@ -830,8 +874,12 @@ function drawUI() {
           drawIconRainbow(cardX + CW / 2, cardY + 50);
         } else if (item.type === 'trail' && item.trail === 'cloud') {
           drawIconCloud(cardX + CW / 2, cardY + 50);
-        } else if (item.type === 'jump') {
+        } else if (item.type === 'jump' && item.jump === 'ring') {
           drawIconJumpRing(cardX + CW / 2, cardY + 50);
+        } else if (item.type === 'jump' && item.jump === 'fart') {
+          drawIconFart(cardX + CW / 2, cardY + 50);
+        } else if (item.type === 'sndJump') {
+          drawIconSndJump(cardX + CW / 2, cardY + 50);
         }
         ctx.font = 'bold 13px monospace';
         ctx.fillStyle = '#ffffff';
@@ -895,6 +943,7 @@ function drawUI() {
           const cy  = GRID_Y + row * (CARD_H + GAP_Y);
           const cardSelected = selectedShopItem && selectedShopItem.id === item.id;
           roundRect(cx, cy, CARD_W, CARD_H, 8, 'rgba(255,255,255,0.07)');
+          if (item.equip)   strokeRoundRect(cx, cy, CARD_W, CARD_H, 8, '#44dd66', 1.5);
           if (cardSelected) strokeRoundRect(cx, cy, CARD_W, CARD_H, 8, '#ffe033', 1.5);
           if (item.lock) {
             drawLock(cx + CARD_W / 2, cy + 28, '#8B4513');
@@ -910,6 +959,10 @@ function drawUI() {
             drawIconCloud(cx + CARD_W / 2, cy + 28);
           } else if (item.type === 'jump' && item.jump === 'ring') {
             drawIconJumpRing(cx + CARD_W / 2, cy + 28);
+          } else if (item.type === 'jump' && item.jump === 'fart') {
+            drawIconFart(cx + CARD_W / 2, cy + 28);
+          } else if (item.type === 'sndJump') {
+            drawIconSndJump(cx + CARD_W / 2, cy + 28);
           }
           ctx.fillStyle = item.lock ? '#666666' : '#ffffff';
           ctx.font = 'bold 10px monospace';
@@ -946,7 +999,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.13.3', W/2, H - 14);
+      ctx.fillText('v0.14.0', W/2, H - 14);
     }
   }
 
@@ -969,29 +1022,64 @@ function drawUI() {
 
   if (state === 'score') {
     if (deadPage === 1) {
-      roundRect(W/2 - 120, POP_CY - 70, 240, 140, 10, 'rgba(0,0,0,0.55)');
+      roundRect(W/2 - 120, POP_CY - 74, 240, 172, 10, 'rgba(0,0,0,0.55)');
 
       ctx.fillStyle = '#ff4455';
       ctx.font      = 'bold 24px monospace';
-      ctx.fillText('GAME OVER', W/2, POP_CY - 32);
+      ctx.fillText('GAME OVER', W/2, POP_CY - 46);
 
-      sprCoinUI(W/2 - 32, POP_CY + 14);
-      ctx.fillStyle = '#ffffff';
-      ctx.font      = '16px monospace';
-      ctx.fillText(`× ${score}`, W/2 + 6, POP_CY + 20);
-      if (score > 0 && score > prevTopScore) {
-        const sw    = ctx.measureText(`× ${score}`).width;
-        const lerpT = (Math.sin(coinTick * 0.05) + 1) / 2;
-        ctx.font      = 'bold 13px monospace';
-        ctx.fillStyle = `rgb(255,${Math.round(160 + lerpT * 64)},${Math.round(lerpT * 51)})`;
-        ctx.textAlign = 'left';
-        ctx.fillText('record', W/2 + 6 + sw / 2 + 8, POP_CY + 20);
-        ctx.textAlign = 'center';
+      // Animation transfert pièces run → total
+      const _t   = Math.max(0, Math.min(1, (deadFrame - 25) / 70));
+      const _run = Math.round(score * (1 - _t));
+      const _tot = Math.round(totalCoins - score * (1 - _t));
+      const isRecord = score > 0 && score > prevTopScore;
+      const lerpT    = (Math.sin(coinTick * 0.05) + 1) / 2;
+      const recColor = `rgb(255,${Math.round(160 + lerpT * 64)},${Math.round(lerpT * 51)})`;
+
+      // Grille centrée : coinX=icône, symX=× ou +, valX=nombre
+      const coinX = W/2 - 28;
+      const symX  = W/2 - 8;
+      const valX  = W/2 + 8;
+
+      // Ligne 1 — run (animée) : 🪙 × N
+      sprCoinUI(coinX, POP_CY - 18);
+      ctx.font = '14px monospace'; ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'left';
+      ctx.fillText('×', symX, POP_CY - 12);
+      ctx.fillText(_run, valX, POP_CY - 12);
+
+      // Ligne 2 — + score record (sans icône pièce)
+      ctx.font      = '12px monospace';
+      ctx.fillStyle = isRecord ? recColor : '#777777';
+      ctx.fillText('+', symX, POP_CY + 10);
+      ctx.fillText(score, valX, POP_CY + 10);
+      if (isRecord) {
+        ctx.font = 'bold 11px monospace';
+        ctx.fillStyle = recColor;
+        ctx.fillText('record', valX + ctx.measureText(`${score}`).width + 8, POP_CY + 10);
       }
+      ctx.textAlign = 'center';
+
+      // Flèche animée
+      if (score > 0) {
+        ctx.globalAlpha = _t < 1 ? 0.4 + _t * 0.3 : 0;
+        ctx.fillStyle   = '#ffe033';
+        ctx.font        = '11px monospace';
+        ctx.fillText('▼', symX + 4, POP_CY + 26);
+        ctx.globalAlpha = 1;
+      }
+
+      // Ligne 3 — total : 🪙 N
+      sprCoinUI(coinX, POP_CY + 44);
+      ctx.fillStyle = _t >= 1 ? '#ffe033' : '#cccccc';
+      ctx.font      = 'bold 14px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(_tot, valX, POP_CY + 50);
+      ctx.textAlign = 'center';
 
       ctx.fillStyle = '#aaaaaa';
       ctx.font      = '12px monospace';
-      ctx.fillText('Click to continue', W/2, POP_CY + 58);
+      ctx.fillText('Click to continue', W/2, POP_CY + 80);
 
     } else if (deadPage === 2) {
       roundRect(W/2 - 100, POP_CY - 111, 200, 238, 10, 'rgba(0,0,0,0.55)');
@@ -1197,7 +1285,7 @@ function handlePageBtn(cx, cy) {
     return true;
   }
   if (state !== 'score' || deadPage !== 3 || deadFrame < 30) return false;
-  if (hitBtn(cx, cy, BTN_YES)) { stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; return true; }
+  if (hitBtn(cx, cy, BTN_YES)) { stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; playSound('travelMusic'); return true; }
   if (hitBtn(cx, cy, BTN_NO))  { stopResumeMusic(); init(); playIntroMusic(); return true; }
   return true;
 }
@@ -1221,7 +1309,7 @@ document.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp') {
     e.preventDefault();
     if (state === 'score' && deadPage === 3 && deadFrame >= 30) {
-      stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; return;
+      stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; playSound('travelMusic'); return;
     }
     flap();
   }

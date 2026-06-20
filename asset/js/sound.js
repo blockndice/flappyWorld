@@ -5,14 +5,19 @@ const SOUND_PATH = 'asset/sound/';
 
 const SOUNDS = [
   { id: 'jump',        file: 'Jump01.wav',       loop: false, volume: 7, overlap: true },
+  { id: 'jumpPet',    file: 'pet01.mp3',        loop: false, volume: 7, overlap: true },
   { id: 'coin',        file: 'valide01.wav',      loop: false, volume: 7 },
+  { id: 'coinRecord', file: 'Coin01.wav',         loop: false, volume: 8 },
   { id: 'purchase',   file: 'valide02.wav',      loop: false, volume: 7 },
+  { id: 'equip',      file: 'Coin02.wav',        loop: false, volume: 7 },
+  { id: 'unequip',    file: 'Coin03.mp3',        loop: false, volume: 7 },
   { id: 'dead',        file: 'Impact01.wav',      loop: false, volume: 8 },
   { id: 'nextPage',    file: 'nextPage.wav',      loop: false, volume: 6 },
   { id: 'introMusic',  file: 'intro1Music.mp3',   loop: true,  volume: 3 },
   { id: 'startRun',    file: 'Start_Run.mp3',     loop: false, volume: 7 },
   { id: 'travelMusic', file: 'travelMusic01.mp3', loop: true,  volume: 6 },
   { id: 'deadMusic',   file: 'Dead02.mp3',        loop: false, volume: 6 },
+  { id: 'deadPet',    file: 'pet02.mp3',         loop: false, volume: 6 },
   { id: 'resumeMusic', file: 'resumeMusic.mp3',   loop: true,  volume: 6 },
 ];
 
@@ -76,11 +81,12 @@ function _stopSound(id) {
 // Start_Run.mp3 terminé → 0.5s → travelMusic01.mp3
 _audioMap['startRun'].addEventListener('ended', () => setTimeout(() => playSound('travelMusic'), 500));
 
-// Impact01.wav terminé → enchaîne Dead02.mp3
-_audioMap['dead'].addEventListener('ended', () => playSound('deadMusic'));
+// Impact01.wav terminé → enchaîne musique mort (Dead02 ou pet02 si sndJump_pet équipé)
+_audioMap['dead'].addEventListener('ended', () => playSound(typeof _activeDeadSnd === 'function' ? _activeDeadSnd() : 'deadMusic'));
 
-// Dead02.mp3 terminé → 0.5s → resumeMusic.mp3
-_audioMap['deadMusic'].addEventListener('ended', () => setTimeout(() => playSound('resumeMusic'), 500));
+// Dead02.mp3 ou pet02.mp3 terminé → 0.1s → resumeMusic.mp3
+_audioMap['deadMusic'].addEventListener('ended', () => setTimeout(() => playSound('resumeMusic'), 100));
+_audioMap['deadPet'].addEventListener('ended',   () => setTimeout(() => playSound('resumeMusic'), 100));
 
 function playIntroMusic()   { playSound('introMusic'); }
 function stopIntroMusic()   { _stopSound('introMusic'); }

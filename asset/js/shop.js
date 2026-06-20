@@ -9,17 +9,20 @@ const SHOP_ITEMS = [
   { id: 'skin_violet',   name: 'Violet',   price: 20,  type: 'skin',  pal: 5,           lock: false, buy: false, equip: false },
   { id: 'skin_orange',   name: 'Orange',   price: 25,  type: 'skin',  pal: 6,           lock: false, buy: false, equip: false },
   { id: 'skin_corail',   name: 'Corail',   price: 25,  type: 'skin',  pal: 7,           lock: false, buy: false, equip: false },
-  { id: 'trail_rainbow', name: 'Arc-ciel', price: 400, type: 'trail', trail: 'rainbow', lock: false, buy: false, equip: false },
-  { id: 'trail_cloud',   name: 'Nuage',    price: 30,  type: 'trail', trail: 'cloud',   lock: false, buy: false, equip: false },
-  { id: 'jump_ring',     name: 'Anneau',   price: 35,  type: 'jump',  jump:  'ring',    lock: false, buy: false, equip: false },
+  { id: 'trail_rainbow', name: 'Arc-ciel', price: 400, type: 'trail',   trail: 'rainbow', lock: false, buy: false, equip: false },
+  { id: 'trail_cloud',   name: 'Nuage',    price: 30,  type: 'trail',   trail: 'cloud',   lock: false, buy: false, equip: false },
+  { id: 'jump_ring',     name: 'Anneau',   price: 35,  type: 'jump',    jump:  'ring',    lock: false, buy: false, equip: false },
+  { id: 'jump_fart',    name: 'Fart',     price: 30,  type: 'jump',    jump:  'fart',    lock: false, buy: false, equip: false },
+  { id: 'sndJump_pet',   name: 'Pet',      price: 20,  type: 'sndJump', snd:   'jumpPet', lock: false, buy: false, equip: false },
 ];
 
 // ─────────────────────────────────────────────
 //  ÉTAT ACTIF DU JOUEUR
 // ─────────────────────────────────────────────
-let playerPal   = 0;    // palette équipée (0 = jaune défaut)
-let activeTrail = null; // 'rainbow' | 'cloud' | null
-let activeJump  = null; // 'ring' | null
+let playerPal    = 0;    // palette équipée (0 = jaune défaut)
+let activeTrail  = null; // 'rainbow' | 'cloud' | null
+let activeJump   = null; // 'ring' | null
+let activeJumpSnd = null; // 'jumpPet' | null
 
 // ─────────────────────────────────────────────
 //  PREVIEW (essai avant achat)
@@ -51,6 +54,15 @@ function _activeTrail() {
 function _activeJump() {
   if (previewedItem && previewedItem.type === 'jump') return previewedItem.jump;
   return activeJump;
+}
+
+function _activeJumpSnd() {
+  if (previewedItem && previewedItem.type === 'sndJump') return previewedItem.snd;
+  return activeJumpSnd;
+}
+
+function _activeDeadSnd() {
+  return activeJumpSnd === 'jumpPet' ? 'deadPet' : 'deadMusic';
 }
 
 // ─────────────────────────────────────────────
@@ -95,28 +107,52 @@ const jumpEffects = [];
 
 function jumpSpawn(bx, by) {
   if (!_activeJump()) return;
-  jumpEffects.push({ x: bx, y: by + 6, jump: _activeJump(), frame: 0 });
+  const type = _activeJump();
+  if (type === 'fart') {
+    const particles = Array.from({ length: 7 }, () => ({
+      dx: (Math.random() - 0.5) * 2.5,
+      dy: Math.random() * 2 + 0.5,
+    }));
+    jumpEffects.push({ x: bx, y: by + 6, jump: type, frame: 0, particles });
+  } else {
+    jumpEffects.push({ x: bx, y: by + 6, jump: type, frame: 0 });
+  }
 }
 
 function jumpTick() {
   for (let i = jumpEffects.length - 1; i >= 0; i--) {
     jumpEffects[i].x -= 2;
     jumpEffects[i].frame++;
-    if (jumpEffects[i].frame > 18) jumpEffects.splice(i, 1);
+    if (jumpEffects[i].frame > 22) jumpEffects.splice(i, 1);
   }
 }
 
 function jumpDraw() {
   for (const e of jumpEffects) {
-    const t = e.frame / 18;
-    const a = 1 - t;
-    const r = t * 14;
     ctx.save();
-    ctx.strokeStyle = `rgba(255,255,255,${a})`;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(e.x, e.y, r, 0, Math.PI * 2);
-    ctx.stroke();
+    if (e.jump === 'fart') {
+      const t = e.frame / 22;
+      for (const p of e.particles) {
+        const px = e.x + p.dx * e.frame;
+        const py = e.y + p.dy * e.frame;
+        ctx.globalAlpha = Math.max(0, 1 - t);
+        ctx.fillStyle = '#aaee22';
+        const s = Math.max(1, 3.5 - t * 3);
+        ctx.beginPath();
+        ctx.arc(px, py, s, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      const t = e.frame / 18;
+      const a = 1 - t;
+      const r = t * 14;
+      ctx.strokeStyle = `rgba(255,255,255,${a})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 }
@@ -127,18 +163,22 @@ function jumpDraw() {
 function equipItem(item) {
   SHOP_ITEMS.forEach(i => { if (i.type === item.type && i.equip) i.equip = false; });
   item.equip = true;
-  if (item.type === 'skin')  playerPal   = item.pal;
-  if (item.type === 'trail') activeTrail = item.trail;
-  if (item.type === 'jump')  activeJump  = item.jump;
+  if (item.type === 'skin')    playerPal    = item.pal;
+  if (item.type === 'trail')   activeTrail  = item.trail;
+  if (item.type === 'jump')    activeJump   = item.jump;
+  if (item.type === 'sndJump') activeJumpSnd = item.snd;
   saveShopState();
+  playSound('equip');
 }
 
 function unequipItem(item) {
   item.equip = false;
-  if (item.type === 'skin')  playerPal   = 0;
-  if (item.type === 'trail') activeTrail = null;
-  if (item.type === 'jump')  activeJump  = null;
+  if (item.type === 'skin')    playerPal    = 0;
+  if (item.type === 'trail')   activeTrail  = null;
+  if (item.type === 'jump')    activeJump   = null;
+  if (item.type === 'sndJump') activeJumpSnd = null;
   saveShopState();
+  playSound('unequip');
 }
 
 function saveShopState() {
@@ -156,9 +196,10 @@ function loadShopState() {
     i.buy   = state[i.id].buy   ?? i.buy;
     i.equip = state[i.id].equip ?? i.equip;
     if (i.equip) {
-      if (i.type === 'skin')  playerPal   = i.pal;
-      if (i.type === 'trail') activeTrail = i.trail;
-      if (i.type === 'jump')  activeJump  = i.jump;
+      if (i.type === 'skin')    playerPal    = i.pal;
+      if (i.type === 'trail')   activeTrail  = i.trail;
+      if (i.type === 'jump')    activeJump   = i.jump;
+      if (i.type === 'sndJump') activeJumpSnd = i.snd;
     }
   });
 }
