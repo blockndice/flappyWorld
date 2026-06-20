@@ -543,9 +543,9 @@ function sprGemCube(x, y) {
   ctx.fillRect(x - 3*S, y - 2*S, 2*S, 3*S);
 }
 
-function drawGemBtn(popY) {
+function drawGemBtn(popY, mxL) {
   const b   = BTN_SHOP_GEMS;
-  const hov = hitBtn(mouseX, mouseY, b);
+  const hov = hitBtn(mxL, mouseY, b);
   // fond
   roundRect(b.x, b.y, b.w, b.h, 6, hov ? 'rgba(30,100,200,0.35)' : 'rgba(10,50,150,0.28)');
   // bordure tournante (marching ants horaire)
@@ -754,6 +754,14 @@ function drawUI() {
       ctx.fillText('Click to go back', W/2, H/2 + 98);
 
     } else if (intro1Page === 4) {
+      // X-scale mobile uniquement (desktop : popScale=1, sans effet)
+      const _cssW  = canvas.getBoundingClientRect().width || W;
+      const popScale = Math.min(1, window.innerWidth / _cssW);
+      const popLeft  = Math.floor(W * (1 - popScale) / 2);
+      const popMX    = popScale < 1 ? (mouseX - popLeft) / popScale : mouseX;
+      ctx.save();
+      if (popScale < 1) ctx.transform(popScale, 0, 0, 1, popLeft, 0);
+
       // fond avec coins arrondis en haut uniquement
       const popY = 235, popR = 18;
       ctx.beginPath();
@@ -777,7 +785,7 @@ function drawUI() {
       ctx.textAlign = 'center';
 
       // bouton gemmes haut-droite du popup
-      drawGemBtn(popY);
+      drawGemBtn(popY, popMX);
 
       if (shopConfirm && selectedShopItem) {
         // ── CONFIRM PAGE ────────────────────────────────────
@@ -815,9 +823,9 @@ function drawUI() {
         }
 
         // boutons bas de l'écran
-        const cancelHov = hitBtn(mouseX, mouseY, CONFIRM_CANCEL);
+        const cancelHov = hitBtn(popMX, mouseY, CONFIRM_CANCEL);
         if (canAfford) {
-          const buyHov = hitBtn(mouseX, mouseY, CONFIRM_BUY);
+          const buyHov = hitBtn(popMX, mouseY, CONFIRM_BUY);
           roundRect(CONFIRM_BUY.x, CONFIRM_BUY.y, CONFIRM_BUY.w, CONFIRM_BUY.h, 7, buyHov ? '#c87800' : '#a05e00');
           strokeRoundRect(CONFIRM_BUY.x, CONFIRM_BUY.y, CONFIRM_BUY.w, CONFIRM_BUY.h, 7, buyHov ? '#ffe033' : '#cc8800', 2);
           ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px monospace';
@@ -833,7 +841,7 @@ function drawUI() {
         // ── VUE GRILLE ──────────────────────────────────────
         // bouton BUY (visible uniquement si un article est sélectionné)
         if (selectedShopItem) {
-          const buyHov = hitBtn(mouseX, mouseY, BTN_SHOP_BUY);
+          const buyHov = hitBtn(popMX, mouseY, BTN_SHOP_BUY);
           const b = BTN_SHOP_BUY;
           roundRect(b.x, b.y, b.w, b.h, 6, buyHov ? '#c87800' : '#a05e00');
           ctx.save();
@@ -884,8 +892,8 @@ function drawUI() {
         });
 
         // pagination
-        const pvHov = hitBtn(mouseX, mouseY, BTN_SHOP_PREV);
-        const nxHov = hitBtn(mouseX, mouseY, BTN_SHOP_NEXT);
+        const pvHov = hitBtn(popMX, mouseY, BTN_SHOP_PREV);
+        const nxHov = hitBtn(popMX, mouseY, BTN_SHOP_NEXT);
         const pv = BTN_SHOP_PREV, nx = BTN_SHOP_NEXT;
         roundRect(pv.x, pv.y, pv.w, pv.h, 6, shopPage > 0 ? (pvHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)') : 'rgba(255,255,255,0.03)');
         roundRect(nx.x, nx.y, nx.w, nx.h, 6, shopPage < totalPages - 1 ? (nxHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)') : 'rgba(255,255,255,0.03)');
@@ -898,19 +906,20 @@ function drawUI() {
         ctx.fillText(`${shopPage + 1} / ${totalPages}`, (pv.x + pv.w + nx.x) / 2, pv.y + pv.h / 2 + 5);
 
         // back
-        const bkHov = hitBtn(mouseX, mouseY, BTN_BACK_SHOP);
+        const bkHov = hitBtn(popMX, mouseY, BTN_BACK_SHOP);
         const bk = BTN_BACK_SHOP;
         roundRect(bk.x, bk.y, bk.w, bk.h, 6, bkHov ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)');
         ctx.fillStyle = '#ffffff'; ctx.font = '13px monospace'; ctx.textAlign = 'left';
         ctx.fillText('back', bk.x + bk.w / 2 - ctx.measureText('back').width / 2, bk.y + bk.h / 2 + 5);
         ctx.textAlign = 'center';
       }
+      ctx.restore(); // fin X-scale popup mobile
     }
 
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.11.4', W/2, H - 14);
+      ctx.fillText('v0.11.5', W/2, H - 14);
     }
   }
 
@@ -1111,6 +1120,10 @@ function handlePageBtn(cx, cy) {
   }
   if (state === 'intro1' && intro1Page === 3) { intro1Page = 2; return true; }
   if (state === 'intro1' && intro1Page === 4) {
+    // Transformer cx en coords logiques popup sur mobile
+    const _cssW_h = canvas.getBoundingClientRect().width || W;
+    const _ps = Math.min(1, window.innerWidth / _cssW_h);
+    if (_ps < 1) { const _pl = Math.floor(W * (1 - _ps) / 2); cx = (cx - _pl) / _ps; }
     // ── vue confirmation ──
     if (shopConfirm && selectedShopItem) {
       const item    = selectedShopItem;
