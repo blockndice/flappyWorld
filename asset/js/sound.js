@@ -31,13 +31,16 @@ for (const s of SOUNDS) {
 // ─────────────────────────────────────────────
 //  CHARGEMENT
 // ─────────────────────────────────────────────
-let _loadedCount = 0;
+let _loadedCount  = 0;
 const _totalCount = SOUNDS.length;
-let soundsReady = false;
+let soundsReady   = false;
 
 function _onAudioReady() {
   _loadedCount = Math.min(_loadedCount + 1, _totalCount);
-  if (_loadedCount >= _totalCount) soundsReady = true;
+  if (_loadedCount >= _totalCount) {
+    soundsReady = true;
+    playIntroMusic(); // démarre automatiquement dès que le chargement est terminé
+  }
 }
 
 Object.values(_audioMap).forEach(a => {
@@ -83,6 +86,14 @@ function stopIntroMusic()   { _stopSound('introMusic'); }
 function stopTravelMusic()  { _stopSound('travelMusic'); }
 function stopResumeMusic()  { _stopSound('resumeMusic'); }
 
+// Appelé à chaque frame depuis la boucle de jeu en intro1 :
+// si le chargement est terminé mais la musique est encore en pause
+// (bloquée par l'autoplay mobile), on retente dès que le navigateur accepte.
+function ensureIntroMusic() {
+  const a = _audioMap['introMusic'];
+  if (a && a.paused && soundsReady) a.play().catch(() => {});
+}
+
 // ─────────────────────────────────────────────
 //  DÉVERROUILLAGE MOBILE (iOS / Android)
 // ─────────────────────────────────────────────
@@ -100,14 +111,15 @@ function _unlockAudio() {
     ac.resume().catch(() => {});
   } catch (e) {}
 
-  // 2. Déverrouiller les HTMLAudioElement (sons ponctuels uniquement)
+  // 2. Déverrouiller les sons ponctuels
   Object.values(_audioMap).forEach(a => {
     if (a.loop) return;
     a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
   });
 
-  // 3. Lancer la musique d'intro (bloquée au chargement de la page)
-  playIntroMusic();
+  // 3. Rattrapage mobile : si la musique a été bloquée par l'autoplay, la relancer
+  const m = _audioMap['introMusic'];
+  if (m && m.paused) playIntroMusic();
 }
 document.addEventListener('touchstart', _unlockAudio, { once: true });
 document.addEventListener('click',      _unlockAudio, { once: true });

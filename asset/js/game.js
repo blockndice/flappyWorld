@@ -812,6 +812,12 @@ function drawUI() {
         const cardX = W / 2 - CW / 2;
         const cardY = popY + 90;
 
+        if (canAfford) {
+          ctx.font = 'bold 14px monospace';
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText('Confirmer l\'achat ?', W / 2, cardY - 16);
+        }
+
         // card agrandie centrée
         roundRect(cardX, cardY, CW, CH, 10, 'rgba(255,255,255,0.10)');
         strokeRoundRect(cardX, cardY, CW, CH, 10, '#ffe033', 2);
@@ -836,7 +842,7 @@ function drawUI() {
         if (!canAfford) {
           ctx.font = 'bold 14px monospace';
           ctx.fillStyle = '#ff4444';
-          ctx.fillText('Pas assez de pièces !', W / 2, cardY + CH + 28);
+          ctx.fillText('Pas assez de pièces !', W / 2, cardY - 16);
         }
 
         // boutons bas de l'écran
@@ -936,7 +942,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.12.2', W/2, H - 14);
+      ctx.fillText('v0.13.0', W/2, H - 14);
     }
   }
 
@@ -1097,6 +1103,7 @@ function render() {
 
 function loop() {
   coinTick++;
+  if (state === 'intro1') ensureIntroMusic();
   if (state !== 'dead' && state !== 'score') {
     for (const c of bgClouds) {
       c.x -= 0.18;
@@ -1143,10 +1150,6 @@ function handlePageBtn(cx, cy) {
     if (_ps < 1) { const _pl = Math.floor(W * (1 - _ps) / 2); cx = (cx - _pl) / _ps; }
     // ── vue confirmation ──
     if (shopConfirm && selectedShopItem) {
-      const item    = selectedShopItem;
-      const CARD_H  = 75;
-      const popY    = 235;
-      const cardY   = popY + 70;
       const _canAfford  = totalCoins >= selectedShopItem.price;
       const _cancelX    = _canAfford ? CONFIRM_CANCEL.x : W / 2 - CONFIRM_CANCEL.w / 2;
       const btnCancelC  = { ...CONFIRM_CANCEL, x: _cancelX };
@@ -1313,5 +1316,4 @@ document.addEventListener('webkitfullscreenchange', () => { updateScale(); updat
 updateFsIcon();
 
 init();
-playIntroMusic();
 loop();

@@ -9,7 +9,7 @@ const SHOP_ITEMS = [
   { id: 'skin_violet',   name: 'Violet',   price: 20, type: 'skin',  pal: 5,           lock: false },
   { id: 'skin_orange',   name: 'Orange',   price: 25, type: 'skin',  pal: 6,           lock: false },
   { id: 'skin_corail',   name: 'Corail',   price: 25, type: 'skin',  pal: 7,           lock: false },
-  { id: 'trail_rainbow', name: 'Arc-ciel', price: 40, type: 'trail', trail: 'rainbow', lock: false  },
+  { id: 'trail_rainbow', name: 'Arc-ciel', price: 400, type: 'trail', trail: 'rainbow', lock: false  },
   { id: 'trail_cloud',   name: 'Nuage',    price: 30, type: 'trail', trail: 'cloud',   lock: false  },
   { id: 'jump_ring',     name: 'Anneau',   price: 35, type: 'jump',  jump:  'ring',    lock: false  },
 ];
