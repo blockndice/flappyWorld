@@ -32,6 +32,7 @@ v0.12.2 = [HOTFIX] change le .gitignore pour accedez au dossier son
 v0.13.0 = clean code sound et shop
 v0.13.1 = Préparation Achat Shop
 v0.13.2 = Achat Shop + Equipement Shop fonctionnel 
+v0.13.3 = Sauvegarde Achat Shop
 
 ** next step **
 distribution de reward sur une période
@@ -39,9 +40,9 @@ profil joueur
 boutique -> échange pièce collecter contre 
 - trick, looping 
 - swap token
-
 mettre une condition pour limiter le nombre de run -> prochain run dans 24h
 - récolté 1000 piece par jour, puis reboot le matin à 7h
+durant l'intro1, les autres oiseau qui défile sont les profils des autre joueurs avec leur equipement + pseudo
 
 cycle
 intro1 → intro2 → countdown → playing → dead → score

@@ -130,6 +130,7 @@ function equipItem(item) {
   if (item.type === 'skin')  playerPal   = item.pal;
   if (item.type === 'trail') activeTrail = item.trail;
   if (item.type === 'jump')  activeJump  = item.jump;
+  saveShopState();
 }
 
 function unequipItem(item) {
@@ -137,7 +138,32 @@ function unequipItem(item) {
   if (item.type === 'skin')  playerPal   = 0;
   if (item.type === 'trail') activeTrail = null;
   if (item.type === 'jump')  activeJump  = null;
+  saveShopState();
 }
+
+function saveShopState() {
+  const state = {};
+  SHOP_ITEMS.forEach(i => { state[i.id] = { buy: i.buy, equip: i.equip }; });
+  localStorage.setItem('fw_shop', JSON.stringify(state));
+}
+
+function loadShopState() {
+  const raw = localStorage.getItem('fw_shop');
+  if (!raw) return;
+  const state = JSON.parse(raw);
+  SHOP_ITEMS.forEach(i => {
+    if (!state[i.id]) return;
+    i.buy   = state[i.id].buy   ?? i.buy;
+    i.equip = state[i.id].equip ?? i.equip;
+    if (i.equip) {
+      if (i.type === 'skin')  playerPal   = i.pal;
+      if (i.type === 'trail') activeTrail = i.trail;
+      if (i.type === 'jump')  activeJump  = i.jump;
+    }
+  });
+}
+
+loadShopState();
 
 // ─────────────────────────────────────────────
 //  SHOP CARD — état achat

@@ -946,7 +946,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.13.2', W/2, H - 14);
+      ctx.fillText('v0.13.3', W/2, H - 14);
     }
   }
 
@@ -1161,6 +1161,7 @@ function handlePageBtn(cx, cy) {
         selectedShopItem.buy = true;
         totalCoins -= selectedShopItem.price;
         localStorage.setItem('fw_coins', totalCoins);
+        saveShopState();
         playSound('purchase');
         shopConfirm = false;
         return true;
@@ -1234,6 +1235,7 @@ const SAVE_VER = '4';
 if (localStorage.getItem('fw_ver') !== SAVE_VER) {
   localStorage.removeItem('fw_top');
   localStorage.removeItem('fw_best');
+  localStorage.removeItem('fw_shop');
   localStorage.setItem('fw_ver', SAVE_VER);
 }
 topScores  = JSON.parse(localStorage.getItem('fw_top')) ?? [55, 50, 45, 40, 35, 30, 25, 20, 15, 10];
