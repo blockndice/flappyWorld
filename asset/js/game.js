@@ -277,10 +277,12 @@ function addScore(s) {
 }
 
 function die() {
+  stopTravelMusic();
   addScore(score);
   state     = 'dead';
   deadFrame = 0;
   deadPage  = 1;
+  playSound('dead');
 }
 
 function flap() {
@@ -299,6 +301,7 @@ function flap() {
     return; // page 2 : géré par handlePageBtn
   }
   bird.vy = FLAP_VY;
+  playSound('jump');
   jumpSpawn(bird.x, bird.y);
 }
 
@@ -421,6 +424,7 @@ function update() {
       const dy = bird.y - p.coinY;
       if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
         p.collected = true;
+        playSound('coin');
         score++;
         totalCoins++;
         localStorage.setItem('fw_coins', totalCoins);
@@ -919,7 +923,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.11.5', W/2, H - 14);
+      ctx.fillText('v0.12.0', W/2, H - 14);
     }
   }
 
@@ -1110,7 +1114,7 @@ function handlePageBtn(cx, cy) {
     if (hitBtn(cx, cy, BTN_BACK_I1)) { intro1Page = 1; return true; }
     for (const btn of MENU_BTNS) {
       if (hitBtn(cx, cy, btn)) {
-        if (btn.action === 'freerun')    { state = 'intro2'; intro2Frame = 0; }
+        if (btn.action === 'freerun')    { stopIntroMusic(); playSound('startRun'); state = 'intro2'; intro2Frame = 0; }
         if (btn.action === 'historique') { intro1Page = 3; }
         if (btn.action === 'shop')       { intro1Page = 4; shopZoom = 2; shopPanX = 0; shopPanY = 54; shopPage = 0; }
         return true;
@@ -1145,8 +1149,8 @@ function handlePageBtn(cx, cy) {
     if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
     if (selectedShopItem && hitBtn(cx, cy, BTN_SHOP_BUY)) { shopConfirm = true; return true; }
     const totalPages = Math.ceil(SHOP_ITEMS.length / 6);
-    if (hitBtn(cx, cy, BTN_SHOP_PREV) && shopPage > 0)              { shopPage--; selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
-    if (hitBtn(cx, cy, BTN_SHOP_NEXT) && shopPage < totalPages - 1) { shopPage++; selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
+    if (hitBtn(cx, cy, BTN_SHOP_PREV) && shopPage > 0)              { shopPage--; playSound('nextPage'); selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
+    if (hitBtn(cx, cy, BTN_SHOP_NEXT) && shopPage < totalPages - 1) { shopPage++; playSound('nextPage'); selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
     // clic sur une card
     const pageItems = SHOP_ITEMS.slice(shopPage * 6, shopPage * 6 + 6);
     const cw = 182, ch = 75, gx = 10, gy = 8, gsx = 13, gsy = 235 + 54;
@@ -1164,8 +1168,8 @@ function handlePageBtn(cx, cy) {
     return true;
   }
   if (state !== 'score' || deadPage !== 3 || deadFrame < 30) return false;
-  if (hitBtn(cx, cy, BTN_YES)) { init(); state = 'countdown'; bird.vy = FLAP_VY; return true; }
-  if (hitBtn(cx, cy, BTN_NO))  { init(); return true; }
+  if (hitBtn(cx, cy, BTN_YES)) { stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; return true; }
+  if (hitBtn(cx, cy, BTN_NO))  { stopResumeMusic(); init(); playIntroMusic(); return true; }
   return true;
 }
 
@@ -1188,7 +1192,7 @@ document.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp') {
     e.preventDefault();
     if (state === 'score' && deadPage === 3 && deadFrame >= 30) {
-      init(); state = 'countdown'; bird.vy = FLAP_VY; return;
+      stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; return;
     }
     flap();
   }
@@ -1296,4 +1300,5 @@ document.addEventListener('webkitfullscreenchange', () => { updateScale(); updat
 updateFsIcon();
 
 init();
+playIntroMusic();
 loop();
