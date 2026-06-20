@@ -12,8 +12,10 @@ const SHOP_ITEMS = [
   { id: 'trail_rainbow', name: 'Arc-ciel', price: 400, type: 'trail',   trail: 'rainbow', lock: false, buy: false, equip: false },
   { id: 'trail_cloud',   name: 'Nuage',    price: 30,  type: 'trail',   trail: 'cloud',   lock: false, buy: false, equip: false },
   { id: 'jump_ring',     name: 'Anneau',   price: 35,  type: 'jump',    jump:  'ring',    lock: false, buy: false, equip: false },
+  { id: 'trick_looping',  name: 'Looping',  price: 100, type: 'trick',   trick: 'looping',  lock: false, buy: false, equip: false },
+  { id: 'trick_firework', name: 'Firework', price: 80,  type: 'jump',    jump:  'firework', lock: false, buy: false, equip: false },
   { id: 'jump_fart',    name: 'Fart',     price: 30,  type: 'jump',    jump:  'fart',    lock: false, buy: false, equip: false },
-  { id: 'sndJump_pet',   name: 'Pet',      price: 20,  type: 'sndJump', snd:   'jumpPet', lock: false, buy: false, equip: false },
+  { id: 'sndJump_pet',    name: 'Pet',      price: 20,  type: 'sndJump', snd:   'jumpPet',   lock: false, buy: false, equip: false },
 ];
 
 // ─────────────────────────────────────────────
@@ -21,8 +23,9 @@ const SHOP_ITEMS = [
 // ─────────────────────────────────────────────
 let playerPal    = 0;    // palette équipée (0 = jaune défaut)
 let activeTrail  = null; // 'rainbow' | 'cloud' | null
-let activeJump   = null; // 'ring' | null
+let activeJump   = null; // 'ring' | 'fart' | null
 let activeJumpSnd = null; // 'jumpPet' | null
+let activeTrick  = null; // 'firework' | 'looping' | null
 
 // ─────────────────────────────────────────────
 //  PREVIEW (essai avant achat)
@@ -33,12 +36,16 @@ function setPreview(item) {
   previewedItem = item;
   trailParticles.length = 0;
   jumpEffects.length    = 0;
+  trickEffects.length   = 0;
+  loopingFrame          = 0;
 }
 
 function clearPreview() {
   previewedItem = null;
   trailParticles.length = 0;
   jumpEffects.length    = 0;
+  trickEffects.length   = 0;
+  loopingFrame          = 0;
 }
 
 function getPreviewPal() {
@@ -63,6 +70,11 @@ function _activeJumpSnd() {
 
 function _activeDeadSnd() {
   return activeJumpSnd === 'jumpPet' ? 'deadPet' : 'deadMusic';
+}
+
+function _activeTrick() {
+  if (previewedItem && previewedItem.type === 'trick') return previewedItem.trick;
+  return activeTrick;
 }
 
 // ─────────────────────────────────────────────
@@ -114,6 +126,13 @@ function jumpSpawn(bx, by) {
       dy: Math.random() * 2 + 0.5,
     }));
     jumpEffects.push({ x: bx, y: by + 6, jump: type, frame: 0, particles });
+  } else if (type === 'firework') {
+    const particles = Array.from({ length: 12 }, (_, i) => {
+      const a = (i / 12) * Math.PI * 2;
+      const spd = 1.5 + Math.random() * 2;
+      return { dx: Math.cos(a) * spd, dy: Math.sin(a) * spd, color: `hsl(${i * 30},100%,65%)` };
+    });
+    jumpEffects.push({ x: bx, y: by, jump: type, frame: 0, maxLife: 25, particles });
   } else {
     jumpEffects.push({ x: bx, y: by + 6, jump: type, frame: 0 });
   }
@@ -123,7 +142,7 @@ function jumpTick() {
   for (let i = jumpEffects.length - 1; i >= 0; i--) {
     jumpEffects[i].x -= 2;
     jumpEffects[i].frame++;
-    if (jumpEffects[i].frame > 22) jumpEffects.splice(i, 1);
+    if (jumpEffects[i].frame > (jumpEffects[i].maxLife ?? 22)) jumpEffects.splice(i, 1);
   }
 }
 
@@ -138,6 +157,18 @@ function jumpDraw() {
         ctx.globalAlpha = Math.max(0, 1 - t);
         ctx.fillStyle = '#aaee22';
         const s = Math.max(1, 3.5 - t * 3);
+        ctx.beginPath();
+        ctx.arc(px, py, s, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (e.jump === 'firework') {
+      const t = e.frame / 25;
+      ctx.globalAlpha = Math.max(0, 1 - t);
+      for (const p of e.particles) {
+        const px = e.x + p.dx * e.frame;
+        const py = e.y + p.dy * e.frame + 0.05 * e.frame * e.frame;
+        ctx.fillStyle = p.color;
+        const s = Math.max(1, 3 - t * 2);
         ctx.beginPath();
         ctx.arc(px, py, s, 0, Math.PI * 2);
         ctx.fill();
@@ -158,6 +189,63 @@ function jumpDraw() {
 }
 
 // ─────────────────────────────────────────────
+//  TRICK SYSTEM
+// ─────────────────────────────────────────────
+const trickEffects  = [];
+let   loopingFrame  = 0;
+const LOOPING_TOTAL = 32;
+
+function trickSpawn(bx, by) {
+  const trick = _activeTrick();
+  if (!trick) return;
+  if (trick === 'firework') {
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * Math.PI * 2;
+      const spd   = 1.5 + Math.random() * 2;
+      trickEffects.push({
+        x: bx, y: by,
+        dx: Math.cos(angle) * spd,
+        dy: Math.sin(angle) * spd,
+        color: `hsl(${i * 30},100%,65%)`,
+        life: 0, maxLife: 22 + Math.floor(Math.random() * 8),
+      });
+    }
+  } else if (trick === 'looping' && loopingFrame === 0) {
+    loopingFrame = 1;
+  }
+}
+
+function trickTick() {
+  for (let i = trickEffects.length - 1; i >= 0; i--) {
+    const p = trickEffects[i];
+    p.x  += p.dx - 2;
+    p.y  += p.dy;
+    p.dy += 0.1;
+    p.life++;
+    if (p.life >= p.maxLife) trickEffects.splice(i, 1);
+  }
+  if (loopingFrame > 0) {
+    loopingFrame++;
+    if (loopingFrame > LOOPING_TOTAL) loopingFrame = 0;
+  }
+}
+
+function trickDraw() {
+  for (const p of trickEffects) {
+    ctx.save();
+    ctx.globalAlpha = 1 - p.life / p.maxLife;
+    ctx.fillStyle   = p.color;
+    ctx.fillRect(Math.round(p.x) - 2, Math.round(p.y) - 2, 4, 4);
+    ctx.restore();
+  }
+}
+
+function getTrickRotation() {
+  if (loopingFrame <= 0) return 0;
+  return (loopingFrame / LOOPING_TOTAL) * Math.PI * 2;
+}
+
+// ─────────────────────────────────────────────
 //  ÉQUIPEMENT
 // ─────────────────────────────────────────────
 function equipItem(item) {
@@ -167,6 +255,7 @@ function equipItem(item) {
   if (item.type === 'trail')   activeTrail  = item.trail;
   if (item.type === 'jump')    activeJump   = item.jump;
   if (item.type === 'sndJump') activeJumpSnd = item.snd;
+  if (item.type === 'trick')   activeTrick  = item.trick;
   saveShopState();
   playSound('equip');
 }
@@ -177,6 +266,7 @@ function unequipItem(item) {
   if (item.type === 'trail')   activeTrail  = null;
   if (item.type === 'jump')    activeJump   = null;
   if (item.type === 'sndJump') activeJumpSnd = null;
+  if (item.type === 'trick')   activeTrick  = null;
   saveShopState();
   playSound('unequip');
 }
@@ -200,6 +290,7 @@ function loadShopState() {
       if (i.type === 'trail')   activeTrail  = i.trail;
       if (i.type === 'jump')    activeJump   = i.jump;
       if (i.type === 'sndJump') activeJumpSnd = i.snd;
+      if (i.type === 'trick')   activeTrick  = i.trick;
     }
   });
 }

@@ -62,6 +62,9 @@ let shopPanY = 0;
 let shopPage         = 0;
 let selectedShopItem = null;
 let shopConfirm      = false;
+let jumpCount        = 0;
+let jumpHeld         = false;
+let jumpHeldFrame    = 0;
 
 function init() {
   bird    = { x: 90, y: H / 2 - 90, vy: 0, vx: 0, rot: 0, scale: 1 };
@@ -280,6 +283,11 @@ function die() {
   stopTravelMusic();
   trailParticles.length = 0;
   jumpEffects.length    = 0;
+  trickEffects.length   = 0;
+  loopingFrame          = 0;
+  jumpCount             = 0;
+  jumpHeld              = false;
+  jumpHeldFrame         = 0;
   addScore(score);
   state     = 'dead';
   deadFrame = 0;
@@ -306,6 +314,10 @@ function flap() {
   bird.vy = FLAP_VY;
   playSound(_activeJumpSnd() || 'jump');
   jumpSpawn(bird.x, bird.y);
+  if (state === 'playing') {
+    jumpCount++;
+    if (_activeTrick() && jumpCount % 5 === 0) trickSpawn(bird.x, bird.y);
+  }
 }
 
 function update() {
@@ -313,12 +325,13 @@ function update() {
     waitFrame++;
     groundX  = (groundX - PIPE_SPEED) % 20;
     bird.x = W / 2;
-    if (waitFrame % 37 === 1) { bird.vy = -(GRAVITY * 19); jumpSpawn(bird.x, bird.y); }
+    if (waitFrame % 37 === 1) { bird.vy = -(GRAVITY * 19); jumpSpawn(bird.x, bird.y); trickSpawn(bird.x, bird.y); }
     bird.vy += GRAVITY;
     bird.y  += bird.vy;
     bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y, H - GROUND_H - BIRD_H / 2 - 8));
     trailTick(bird.x, bird.y);
     jumpTick();
+    trickTick();
     bird.rot = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
 
     if (Math.random() < 0.012) {
@@ -408,6 +421,20 @@ function update() {
   frame++;
   trailTick(bird.x, bird.y);
   jumpTick();
+  trickTick();
+
+  // maintien du saut → trick continu (uniquement si trick équipé)
+  if (jumpHeld && _activeTrick()) {
+    jumpHeldFrame++;
+    if (jumpHeldFrame % 22 === 0) {
+      bird.vy = FLAP_VY;
+      playSound(_activeJumpSnd() || 'jump');
+      jumpSpawn(bird.x, bird.y);
+      trickSpawn(bird.x, bird.y);
+    }
+  } else {
+    jumpHeldFrame = 0;
+  }
 
   bird.vy  += GRAVITY;
   bird.y   += bird.vy;
@@ -575,6 +602,48 @@ function drawIconFart(cx, cy) {
   ctx.arc(0, 0, 7, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawIconFirework(cx, cy) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    ctx.strokeStyle = `hsl(${i * 30},100%,65%)`;
+    ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * 4, Math.sin(a) * 4);
+    ctx.lineTo(Math.cos(a) * 13, Math.sin(a) * 13);
+    ctx.stroke();
+    ctx.fillStyle = `hsl(${i * 30},100%,75%)`;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a) * 15, Math.sin(a) * 15, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawIconLooping(cx, cy) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(0, 4, 12, 0, Math.PI * 2);
+  ctx.stroke();
+  // tête de flèche sur le cercle indiquant le sens du looping
+  const aa = -Math.PI / 3;
+  ctx.save();
+  ctx.translate(Math.cos(aa) * 12, Math.sin(aa) * 12 + 4);
+  ctx.rotate(aa + Math.PI / 2 + 0.4);
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.beginPath();
+  ctx.moveTo(0, -5); ctx.lineTo(-3, 2); ctx.lineTo(3, 2);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
   ctx.restore();
 }
 
@@ -880,6 +949,10 @@ function drawUI() {
           drawIconFart(cardX + CW / 2, cardY + 50);
         } else if (item.type === 'sndJump') {
           drawIconSndJump(cardX + CW / 2, cardY + 50);
+        } else if (item.type === 'jump' && item.jump === 'firework') {
+          drawIconFirework(cardX + CW / 2, cardY + 50);
+        } else if (item.type === 'trick' && item.trick === 'looping') {
+          drawIconLooping(cardX + CW / 2, cardY + 50);
         }
         ctx.font = 'bold 13px monospace';
         ctx.fillStyle = '#ffffff';
@@ -963,6 +1036,10 @@ function drawUI() {
             drawIconFart(cx + CARD_W / 2, cy + 28);
           } else if (item.type === 'sndJump') {
             drawIconSndJump(cx + CARD_W / 2, cy + 28);
+          } else if (item.type === 'jump' && item.jump === 'firework') {
+            drawIconFirework(cx + CARD_W / 2, cy + 28);
+          } else if (item.type === 'trick' && item.trick === 'looping') {
+            drawIconLooping(cx + CARD_W / 2, cy + 28);
           }
           ctx.fillStyle = item.lock ? '#666666' : '#ffffff';
           ctx.font = 'bold 10px monospace';
@@ -999,7 +1076,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.14.0', W/2, H - 14);
+      ctx.fillText('v0.15.0', W/2, H - 14);
     }
   }
 
@@ -1181,10 +1258,11 @@ function render() {
   if (state === 'intro1') renderBgBirds();
   trailDraw();
   jumpDraw();
+  trickDraw();
   ctx.save();
   ctx.translate(bird.x, bird.y);
   ctx.scale(bird.scale, bird.scale);
-  sprBird(0, 0, bird.rot, getPreviewPal());
+  sprBird(0, 0, bird.rot + getTrickRotation(), getPreviewPal());
   ctx.restore();
 
   if (doZoom) ctx.restore(); // fin zoom scène — UI reste à l'échelle normale
@@ -1226,7 +1304,7 @@ function handlePageBtn(cx, cy) {
     if (hitBtn(cx, cy, BTN_BACK_I1)) { intro1Page = 1; return true; }
     for (const btn of MENU_BTNS) {
       if (hitBtn(cx, cy, btn)) {
-        if (btn.action === 'freerun')    { stopIntroMusic(); playSound('startRun'); state = 'intro2'; intro2Frame = 0; trailParticles.length = 0; jumpEffects.length = 0; }
+        if (btn.action === 'freerun')    { stopIntroMusic(); playSound('startRun'); state = 'intro2'; intro2Frame = 0; trailParticles.length = 0; jumpEffects.length = 0; trickEffects.length = 0; loopingFrame = 0; jumpCount = 0; }
         if (btn.action === 'historique') { intro1Page = 3; }
         if (btn.action === 'shop')       { intro1Page = 4; shopZoom = 2; shopPanX = 0; shopPanY = 54; shopPage = 0; }
         return true;
@@ -1293,17 +1371,25 @@ function handlePageBtn(cx, cy) {
 canvas.addEventListener('mousemove',  e => { [mouseX, mouseY] = canvasPos(e.clientX, e.clientY); });
 canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
 
-canvas.addEventListener('click', e => {
+canvas.addEventListener('mousedown', e => {
   const [cx, cy] = canvasPos(e.clientX, e.clientY);
-  if (!handlePageBtn(cx, cy)) flap();
+  if (!handlePageBtn(cx, cy)) { flap(); jumpHeld = true; jumpHeldFrame = 0; }
+});
+canvas.addEventListener('mouseup',   () => { jumpHeld = false; jumpHeldFrame = 0; });
+canvas.addEventListener('mouseleave', () => { jumpHeld = false; jumpHeldFrame = 0; });
+
+canvas.addEventListener('click', e => {
+  // garde pour la compatibilité UI (handlePageBtn déjà géré dans mousedown)
 });
 
 canvas.addEventListener('touchstart', e => {
   e.preventDefault();
   const t = e.touches[0];
   const [cx, cy] = canvasPos(t.clientX, t.clientY);
-  if (!handlePageBtn(cx, cy)) flap();
+  if (!handlePageBtn(cx, cy)) { flap(); jumpHeld = true; jumpHeldFrame = 0; }
 }, { passive: false });
+canvas.addEventListener('touchend',    () => { jumpHeld = false; jumpHeldFrame = 0; });
+canvas.addEventListener('touchcancel', () => { jumpHeld = false; jumpHeldFrame = 0; });
 
 document.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp') {
@@ -1311,8 +1397,11 @@ document.addEventListener('keydown', e => {
     if (state === 'score' && deadPage === 3 && deadFrame >= 30) {
       stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; playSound('travelMusic'); return;
     }
-    flap();
+    if (!e.repeat) { flap(); jumpHeld = true; jumpHeldFrame = 0; }
   }
+});
+document.addEventListener('keyup', e => {
+  if (e.code === 'Space' || e.code === 'ArrowUp') { jumpHeld = false; jumpHeldFrame = 0; }
 });
 
 

@@ -4,7 +4,7 @@
 const SOUND_PATH = 'asset/sound/';
 
 const SOUNDS = [
-  { id: 'jump',        file: 'Jump01.wav',       loop: false, volume: 7, overlap: true },
+  { id: 'jump',        file: 'Jump02.mp3',       loop: false, volume: 3, overlap: true },
   { id: 'jumpPet',    file: 'pet01.mp3',        loop: false, volume: 7, overlap: true },
   { id: 'coin',        file: 'valide01.wav',      loop: false, volume: 7 },
   { id: 'coinRecord', file: 'Coin01.wav',         loop: false, volume: 8 },
