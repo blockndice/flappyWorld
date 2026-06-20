@@ -296,6 +296,7 @@ function flap() {
   }
   if (state === 'countdown') return;
   if (state === 'intro1') {
+    if (intro1Page === 1 && !soundsReady) return;
     if (intro1Page === 1) { intro1Page = 2; return; }
     if (intro1Page === 3) { intro1Page = 2; return; }
     return; // page 2 : géré par handlePageBtn
@@ -701,9 +702,21 @@ function drawUI() {
       ctx.fillStyle = '#ffe033';
       ctx.font = 'bold 20px monospace';
       ctx.fillText('FLAPPY WORLD', W/2, H/2 - 20);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '13px monospace';
-      ctx.fillText('Clic  /  Espace  /  Toucher', W/2, H/2 + 14);
+      if (soundsReady) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '13px monospace';
+        ctx.fillText('Clic  /  Espace  /  Toucher', W/2, H/2 + 14);
+      } else {
+        const progress = getSoundProgress();
+        const barW = 160, barH = 8, barX = W/2 - 80, barY = H/2 + 4;
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.fillRect(barX, barY, barW, barH);
+        ctx.fillStyle = '#ffe033';
+        ctx.fillRect(barX, barY, barW * progress, barH);
+        ctx.fillStyle = '#aaaaaa';
+        ctx.font = '11px monospace';
+        ctx.fillText('load', W/2, H/2 + 25);
+      }
 
     } else if (intro1Page === 2) {
       roundRect(W/2 - 100, H/2 - 132, 200, 266, 10, 'rgba(0,0,0,0.55)');
@@ -923,7 +936,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.12.0', W/2, H - 14);
+      ctx.fillText('v0.12.1', W/2, H - 14);
     }
   }
 

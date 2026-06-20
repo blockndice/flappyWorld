@@ -27,9 +27,9 @@ v0.11.3 = Fenêtre Shop page confirme achat
 v0.11.4 = préparation swap token + replacement bouton BUY
 v0.11.5 = Fenêtre Shop adapté sur mobile
 v0.12.0 = Sound Design
+v0.12.1 = barre de chargement asset
 
 ** next step **
-sound design
 distribution de reward sur une période
 profil joueur 
 boutique -> échange pièce collecter contre 

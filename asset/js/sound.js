@@ -24,7 +24,29 @@ for (const s of SOUNDS) {
   a.loop       = s.loop;
   a.volume     = s.volume / 10;
   a._overlap   = !!s.overlap;
+  a.preload    = 'auto';
   _audioMap[s.id] = a;
+}
+
+// ─────────────────────────────────────────────
+//  CHARGEMENT
+// ─────────────────────────────────────────────
+let _loadedCount = 0;
+const _totalCount = SOUNDS.length;
+let soundsReady = false;
+
+function _onAudioReady() {
+  _loadedCount = Math.min(_loadedCount + 1, _totalCount);
+  if (_loadedCount >= _totalCount) soundsReady = true;
+}
+
+Object.values(_audioMap).forEach(a => {
+  if (a.readyState >= 4) { _onAudioReady(); return; }
+  a.addEventListener('canplaythrough', _onAudioReady, { once: true });
+});
+
+function getSoundProgress() {
+  return _totalCount > 0 ? _loadedCount / _totalCount : 1;
 }
 
 function playSound(id) {
@@ -61,14 +83,31 @@ function stopIntroMusic()   { _stopSound('introMusic'); }
 function stopTravelMusic()  { _stopSound('travelMusic'); }
 function stopResumeMusic()  { _stopSound('resumeMusic'); }
 
-// Déverrouillage audio au premier geste (requis sur iOS / Android)
-// Les navigateurs mobiles bloquent tout .play() avant une interaction utilisateur.
+// ─────────────────────────────────────────────
+//  DÉVERROUILLAGE MOBILE (iOS / Android)
+// ─────────────────────────────────────────────
+// Android Chrome maintient l'AudioContext en état "suspended" jusqu'au premier geste.
+// On le réveille avec un buffer silencieux, puis on déverrouille chaque HTMLAudioElement.
 function _unlockAudio() {
+  // 1. Réveiller l'AudioContext (Android Chrome)
+  try {
+    const ac  = new (window.AudioContext || window.webkitAudioContext)();
+    const buf = ac.createBuffer(1, 1, 22050);
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    src.connect(ac.destination);
+    src.start(0);
+    ac.resume().catch(() => {});
+  } catch (e) {}
+
+  // 2. Déverrouiller les HTMLAudioElement (sons ponctuels uniquement)
   Object.values(_audioMap).forEach(a => {
-    if (a.loop) return; // les musiques en boucle ne sont pas interrompues ici
+    if (a.loop) return;
     a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
   });
-  playIntroMusic(); // démarre intro1Music (bloquée au chargement sur mobile)
+
+  // 3. Lancer la musique d'intro (bloquée au chargement de la page)
+  playIntroMusic();
 }
 document.addEventListener('touchstart', _unlockAudio, { once: true });
 document.addEventListener('click',      _unlockAudio, { once: true });
