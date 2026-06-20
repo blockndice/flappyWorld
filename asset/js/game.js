@@ -866,14 +866,15 @@ function drawUI() {
         if (selectedShopItem) {
           const buyHov = hitBtn(popMX, mouseY, BTN_SHOP_BUY);
           const b = BTN_SHOP_BUY;
-          roundRect(b.x, b.y, b.w, b.h, 6, buyHov ? '#c87800' : '#a05e00');
+          const isOwned = selectedShopItem.buy;
+          roundRect(b.x, b.y, b.w, b.h, 6, isOwned ? (buyHov ? '#1a8a3a' : '#116628') : (buyHov ? '#c87800' : '#a05e00'));
           ctx.save();
-          if (buyHov) { ctx.shadowColor = '#ffaa00'; ctx.shadowBlur = 10; }
-          strokeRoundRect(b.x, b.y, b.w, b.h, 6, buyHov ? '#ffe033' : '#cc8800', 1.5);
+          if (buyHov) { ctx.shadowColor = isOwned ? '#44dd66' : '#ffaa00'; ctx.shadowBlur = 10; }
+          strokeRoundRect(b.x, b.y, b.w, b.h, 6, isOwned ? (buyHov ? '#44dd66' : '#22aa44') : (buyHov ? '#ffe033' : '#cc8800'), 1.5);
           ctx.restore();
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 13px monospace';
-          ctx.fillText('BUY', b.x + b.w / 2, b.y + b.h / 2 + 5);
+          ctx.fillText(isOwned ? 'EQUIP' : 'BUY', b.x + b.w / 2, b.y + b.h / 2 + 5);
         }
 
         // grille articles (2 col × 3 lignes = 6 par page)
@@ -908,10 +909,7 @@ function drawUI() {
           ctx.font = 'bold 10px monospace';
           ctx.textAlign = 'center';
           ctx.fillText(item.name, cx + CARD_W / 2, cy + CARD_H - 9);
-          sprCoinUI(cx + 16, cy + CARD_H - 15);
-          ctx.font = '10px monospace'; ctx.fillStyle = '#ffe033'; ctx.textAlign = 'left';
-          ctx.fillText(item.price, cx + 28, cy + CARD_H - 11);
-          ctx.textAlign = 'center';
+          drawItemBuyState(item, cx, cy, CARD_H);
         });
 
         // pagination
@@ -1163,7 +1161,7 @@ function handlePageBtn(cx, cy) {
     }
     // ── vue grille ──
     if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
-    if (selectedShopItem && hitBtn(cx, cy, BTN_SHOP_BUY)) { shopConfirm = true; return true; }
+    if (selectedShopItem && hitBtn(cx, cy, BTN_SHOP_BUY)) { if (!selectedShopItem.buy) shopConfirm = true; return true; }
     const totalPages = Math.ceil(SHOP_ITEMS.length / 6);
     if (hitBtn(cx, cy, BTN_SHOP_PREV) && shopPage > 0)              { shopPage--; playSound('nextPage'); selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
     if (hitBtn(cx, cy, BTN_SHOP_NEXT) && shopPage < totalPages - 1) { shopPage++; playSound('nextPage'); selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }

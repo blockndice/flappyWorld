@@ -2,16 +2,16 @@
 //  SHOP ITEMS
 // ─────────────────────────────────────────────
 const SHOP_ITEMS = [
-  { id: 'skin_vert',     name: 'Vert',     price: 10, type: 'skin',  pal: 1,           lock: false },
-  { id: 'skin_rouge',    name: 'Rouge',    price: 15, type: 'skin',  pal: 2,           lock: false },
-  { id: 'skin_rose',     name: 'Rose',     price: 15, type: 'skin',  pal: 3,           lock: false },
-  { id: 'skin_bleu',     name: 'Bleu',     price: 20, type: 'skin',  pal: 4,           lock: false },
-  { id: 'skin_violet',   name: 'Violet',   price: 20, type: 'skin',  pal: 5,           lock: false },
-  { id: 'skin_orange',   name: 'Orange',   price: 25, type: 'skin',  pal: 6,           lock: false },
-  { id: 'skin_corail',   name: 'Corail',   price: 25, type: 'skin',  pal: 7,           lock: false },
-  { id: 'trail_rainbow', name: 'Arc-ciel', price: 400, type: 'trail', trail: 'rainbow', lock: false  },
-  { id: 'trail_cloud',   name: 'Nuage',    price: 30, type: 'trail', trail: 'cloud',   lock: false  },
-  { id: 'jump_ring',     name: 'Anneau',   price: 35, type: 'jump',  jump:  'ring',    lock: false  },
+  { id: 'skin_vert',     name: 'Vert',     price: 10,  type: 'skin',  pal: 1,           lock: false, buy: false },
+  { id: 'skin_rouge',    name: 'Rouge',    price: 15,  type: 'skin',  pal: 2,           lock: false, buy: false },
+  { id: 'skin_rose',     name: 'Rose',     price: 15,  type: 'skin',  pal: 3,           lock: false, buy: false },
+  { id: 'skin_bleu',     name: 'Bleu',     price: 20,  type: 'skin',  pal: 4,           lock: false, buy: false },
+  { id: 'skin_violet',   name: 'Violet',   price: 20,  type: 'skin',  pal: 5,           lock: false, buy: false },
+  { id: 'skin_orange',   name: 'Orange',   price: 25,  type: 'skin',  pal: 6,           lock: false, buy: false },
+  { id: 'skin_corail',   name: 'Corail',   price: 25,  type: 'skin',  pal: 7,           lock: false, buy: false },
+  { id: 'trail_rainbow', name: 'Arc-ciel', price: 400, type: 'trail', trail: 'rainbow', lock: false, buy: true },
+  { id: 'trail_cloud',   name: 'Nuage',    price: 30,  type: 'trail', trail: 'cloud',   lock: false, buy: false },
+  { id: 'jump_ring',     name: 'Anneau',   price: 35,  type: 'jump',  jump:  'ring',    lock: false, buy: false },
 ];
 
 // ─────────────────────────────────────────────
@@ -118,5 +118,23 @@ function jumpDraw() {
     ctx.arc(e.x, e.y, r, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
+  }
+}
+
+// ─────────────────────────────────────────────
+//  SHOP CARD — état achat
+// ─────────────────────────────────────────────
+function drawItemBuyState(item, cx, cy, cardH) {
+  if (item.buy) {
+    ctx.font = 'bold 15px monospace';
+    ctx.fillStyle = '#44dd66';
+    ctx.textAlign = 'left';
+    ctx.fillText('✓', cx + 10, cy + cardH - 8);
+    ctx.textAlign = 'center';
+  } else {
+    sprCoinUI(cx + 16, cy + cardH - 15);
+    ctx.font = '10px monospace'; ctx.fillStyle = '#ffe033'; ctx.textAlign = 'left';
+    ctx.fillText(item.price, cx + 28, cy + cardH - 11);
+    ctx.textAlign = 'center';
   }
 }
