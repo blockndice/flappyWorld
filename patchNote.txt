@@ -31,12 +31,12 @@ v0.12.1 = barre de chargement asset
 v0.12.2 = [HOTFIX] change le .gitignore pour accedez au dossier son
 v0.13.0 = clean code sound et shop
 v0.13.1 = Préparation Achat Shop
+v0.13.2 = Achat Shop + Equipement Shop fonctionnel 
 
 ** next step **
 distribution de reward sur une période
 profil joueur 
 boutique -> échange pièce collecter contre 
-- personalisation skin
 - trick, looping 
 - swap token
 
