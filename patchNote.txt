@@ -28,6 +28,7 @@ v0.11.4 = préparation swap token + replacement bouton BUY
 v0.11.5 = Fenêtre Shop adapté sur mobile
 v0.12.0 = Sound Design
 v0.12.1 = barre de chargement asset
+v0.12.2 = [HOTFIX] change le .gitignore pour accedez au dossier son
 
 ** next step **
 distribution de reward sur une période
