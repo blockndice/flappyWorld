@@ -35,6 +35,7 @@ v0.13.2 = Achat Shop + Equipement Shop fonctionnel
 v0.13.3 = Sauvegarde Achat Shop
 v0.14.0 = article jump pet + article Fart + amélioration page 1 game over + bordure vert & son equip/unequip
 v0.15.0 = article trick Looping + article jump Firework + maintien saut déclenche trick
+v0.15.1 = [HOTFIX] erreur majuscule jump02.mp3 dans le dossier -> Jump02.mp3 dans sound.js
 
 ** next step **
 distribution de reward sur une période
