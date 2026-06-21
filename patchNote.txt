@@ -41,9 +41,9 @@ v0.16.1 = [HOTFIX] stop resumeMusic.mp3 si déclenché hors cycle + review code
 v0.16.2 = barre volume présent uniquement sur bureau
 v0.16.3 = Shop preview sound jump
 v0.16.4 = Shop Equip new item buy + bannière du jeu
+v0.17.0 = Physique de l'oiseau améliorer
 
 ** next step **
-Shop -> equip l'article nouvellement acheter
 Shop -> 1 page = 1 theme
 profil joueur 
 durant l'intro1, les autres oiseau qui défile sont les profils des autre joueurs avec leur equipement + pseudo
@@ -62,3 +62,20 @@ mettre une condition pour limiter le nombre de run en mode adventure -> reboot l
 
 cycle
 intro1 → intro2 → countdown → playing → dead → score
+
+physique oiseau (retours joueurs : trop difficile)
+────────────────────────────────────────────────────────────────────────────
+paramètre      │ avant  │ après  │ rôle
+───────────────┼────────┼────────┼──────────────────────────────────────────
+FLAP_VY        │  -7.2  │  -7.6  │ élan au saut (plus négatif = plus fort)
+FLOAT_FRAMES   │   —    │   14   │ frames de gravity réduite (maintien btn)
+FLOAT_GRAVITY  │   —    │  0.10  │ gravity pendant le float (normal = 0.38)
+GRAVITY        │  0.38  │  0.38  │ inchangé
+PIPE_SPEED     │   2.4  │   2.4  │ inchangé
+PIPE_GAP       │  130   │  130   │ inchangé
+
+conseils de réglage :
+float trop long     → baisser FLOAT_FRAMES   (ex: 10)
+vol trop léger      → monter  FLOAT_GRAVITY   (ex: 0.18)
+saut trop puissant  → remonter FLAP_VY        (ex: -7.3)
+────────────────────────────────────────────────────────────────────────────

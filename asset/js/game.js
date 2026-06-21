@@ -7,8 +7,10 @@ const ctx    = canvas.getContext('2d');
 const W          = 400;
 const H          = 600;
 const GROUND_H   = 80;
-const GRAVITY    = 0.38;
-const FLAP_VY    = -7.2;
+const GRAVITY       = 0.38;
+const FLAP_VY       = -7.6;
+const FLOAT_FRAMES  = 14;   // frames de gravity réduite après un saut (maintien bouton)
+const FLOAT_GRAVITY = 0.10; // gravity appliquée pendant le float
 const PIPE_SPEED = 2.4;
 const PIPE_W     = 54;
 const PIPE_GAP   = 130;
@@ -432,10 +434,10 @@ function update() {
   jumpTick();
   trickTick();
 
-  // maintien du saut → trick continu (uniquement si trick équipé)
-  if (jumpHeld && _activeTrick()) {
+  // maintien du saut : float + trick continu si trick équipé
+  if (jumpHeld) {
     jumpHeldFrame++;
-    if (jumpHeldFrame % 22 === 0) {
+    if (_activeTrick() && jumpHeldFrame % 22 === 0) {
       bird.vy = FLAP_VY;
       playSound(_activeJumpSnd() || 'jump');
       jumpSpawn(bird.x, bird.y);
@@ -445,7 +447,8 @@ function update() {
     jumpHeldFrame = 0;
   }
 
-  bird.vy  += GRAVITY;
+  const _grav = (jumpHeld && jumpHeldFrame <= FLOAT_FRAMES) ? FLOAT_GRAVITY : GRAVITY;
+  bird.vy  += _grav;
   bird.y   += bird.vy;
   bird.rot  = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
 
@@ -1083,7 +1086,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.16.4', W/2, H - 14);
+      ctx.fillText('v0.17.0', W/2, H - 14);
     }
   }
 
