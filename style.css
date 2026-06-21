@@ -97,7 +97,10 @@ canvas {
   }
 }
 
-/* Cache le bouton plein écran et le volume sur petits écrans phone uniquement */
+/* Cache le bouton plein écran sur petits écrans et le volume sur tous les mobiles */
 @media (pointer: coarse) and (max-width: 500px) {
-  #fsBtn, #volWrap { display: none; }
+  #fsBtn { display: none; }
+}
+@media (pointer: coarse) {
+  #volWrap { display: none !important; }
 }

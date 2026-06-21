@@ -38,6 +38,7 @@ v0.15.0 = article trick Looping + article jump Firework + maintien saut déclenc
 v0.15.1 = [HOTFIX] erreur majuscule jump02.mp3 dans le dossier -> Jump02.mp3 dans sound.js
 v0.16.0 = barre de volume + Correctif preview looping
 v0.16.1 = [HOTFIX] stop resumeMusic.mp3 si déclenché hors cycle + review code
+v0.16.2 = barre volume présent uniquement sur bureau
 
 ** next step **
 distribution de reward sur une période
