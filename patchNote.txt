@@ -39,8 +39,10 @@ v0.15.1 = [HOTFIX] erreur majuscule jump02.mp3 dans le dossier -> Jump02.mp3 dan
 v0.16.0 = barre de volume + Correctif preview looping
 v0.16.1 = [HOTFIX] stop resumeMusic.mp3 si déclenché hors cycle + review code
 v0.16.2 = barre volume présent uniquement sur bureau
+v0.16.3 = Shop preview sound jump
 
 ** next step **
+Shop -> 1 page = 1 theme
 distribution de reward sur une période
 profil joueur 
 

@@ -332,7 +332,7 @@ function update() {
     waitFrame++;
     groundX  = (groundX - PIPE_SPEED) % 20;
     bird.x = W / 2;
-    if (waitFrame % 37 === 1) { bird.vy = -(GRAVITY * 19); jumpSpawn(bird.x, bird.y); previewJumpCount++; if (previewJumpCount % 3 === 0) trickSpawn(bird.x, bird.y); }
+    if (waitFrame % 37 === 1) { bird.vy = -(GRAVITY * 19); if (intro1Page === 4 && previewedItem && previewedItem.type === 'sndJump') playSound(_activeJumpSnd()); jumpSpawn(bird.x, bird.y); previewJumpCount++; if (previewJumpCount % 3 === 0) trickSpawn(bird.x, bird.y); }
     bird.vy += GRAVITY;
     bird.y  += bird.vy;
     bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y, H - GROUND_H - BIRD_H / 2 - 8));
@@ -1081,7 +1081,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.16.2', W/2, H - 14);
+      ctx.fillText('v0.16.3', W/2, H - 14);
     }
   }
 
