@@ -825,14 +825,38 @@ function drawUI() {
 
   if (state === 'intro1') {
     if (intro1Page === 1) {
-      roundRect(W/2 - 110, H/2 - 55, 220, 90, 8, 'rgba(0,0,0,0.45)');
+      roundRect(W/2 - 110, H/2 - 40, 220, 52, 8, 'rgba(0,0,0,0.45)');
       ctx.fillStyle = '#ffe033';
       ctx.font = 'bold 20px monospace';
-      ctx.fillText('FLAPPY WORLD', W/2, H/2 - 20);
+      ctx.fillText('FLAPPY WORLD', W/2, H/2 - 14);
+
+      // Badge Demo
+      ctx.save();
+      ctx.translate(252, 294);
+      ctx.rotate(-15 * Math.PI / 180);
+      ctx.font = 'bold 14px monospace';
+      ctx.fillStyle = '#ff9100';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText('ALPHA', 0, 0);
+      ctx.restore();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+
       if (soundsReady) {
+        const _t = (Date.now() % 3500) / 3500; // cycle 3.5s : 2.5s visible, 1s masqué
+        const _vis = 2.5 / 3.5, _fade = 0.07;
+        let _pulse;
+        if      (_t < _fade)         _pulse = _t / _fade;
+        else if (_t < _vis - _fade)  _pulse = 1;
+        else if (_t < _vis)          _pulse = (_vis - _t) / _fade;
+        else                         _pulse = 0;
+        ctx.globalAlpha = _pulse;
         ctx.fillStyle = '#ffffff';
         ctx.font = '13px monospace';
-        ctx.fillText('Clic  /  Espace  /  Toucher', W/2, H/2 + 14);
+        ctx.fillText('Clic  /  Espace  /  Toucher', W/2, H * 0.75);
+        ctx.fillText('pour commencer', W/2, H * 0.75 + 18);
+        ctx.globalAlpha = 1;
       } else {
         const progress = getSoundProgress();
         const barW = 160, barH = 8, barX = W/2 - 80, barY = H/2 + 4;
@@ -1086,7 +1110,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.17.0', W/2, H - 14);
+      ctx.fillText('v0.17.1', W/2, H - 14);
     }
   }
 

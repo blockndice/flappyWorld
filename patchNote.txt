@@ -42,6 +42,7 @@ v0.16.2 = barre volume présent uniquement sur bureau
 v0.16.3 = Shop preview sound jump
 v0.16.4 = Shop Equip new item buy + bannière du jeu
 v0.17.0 = Physique de l'oiseau améliorer
+v0.17.1 = amélioration ecran titre
 
 ** next step **
 Shop -> 1 page = 1 theme
