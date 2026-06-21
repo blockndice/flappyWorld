@@ -35,6 +35,22 @@ for (const s of SOUNDS) {
 }
 
 // ─────────────────────────────────────────────
+//  VOLUME MAÎTRE
+// ─────────────────────────────────────────────
+let _masterVol = parseFloat(localStorage.getItem('fw_vol') ?? '1');
+
+function setMasterVolume(v) {
+  _masterVol = Math.max(0, Math.min(1, v));
+  localStorage.setItem('fw_vol', _masterVol);
+  for (const s of SOUNDS) {
+    const a = _audioMap[s.id];
+    if (a) a.volume = (s.volume / 10) * _masterVol;
+  }
+}
+
+function getMasterVolume() { return _masterVol; }
+
+// ─────────────────────────────────────────────
 //  CHARGEMENT
 // ─────────────────────────────────────────────
 let _loadedCount  = 0;
@@ -45,7 +61,8 @@ function _onAudioReady() {
   _loadedCount = Math.min(_loadedCount + 1, _totalCount);
   if (_loadedCount >= _totalCount) {
     soundsReady = true;
-    playIntroMusic(); // démarre automatiquement dès que le chargement est terminé
+    setMasterVolume(_masterVol); // applique le volume sauvegardé
+    playIntroMusic();
   }
 }
 

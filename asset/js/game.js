@@ -65,6 +65,7 @@ let shopConfirm      = false;
 let jumpCount        = 0;
 let jumpHeld         = false;
 let jumpHeldFrame    = 0;
+let previewJumpCount = 0;
 
 function init() {
   bird    = { x: 90, y: H / 2 - 90, vy: 0, vx: 0, rot: 0, scale: 1 };
@@ -75,7 +76,8 @@ function init() {
   groundX     = 0;
   countdown   = 0;
   intro2Frame = 0;
-  waitFrame   = 0;
+  waitFrame        = 0;
+  previewJumpCount = 0;
   bgBirds      = [];
   deadFrame    = 0;
   prevTopScore = topScores[topScores.length - 1] || 0;
@@ -316,7 +318,7 @@ function flap() {
   jumpSpawn(bird.x, bird.y);
   if (state === 'playing') {
     jumpCount++;
-    if (_activeTrick() && jumpCount % 5 === 0) trickSpawn(bird.x, bird.y);
+    if (_activeTrick() && jumpCount % 4 === 0) trickSpawn(bird.x, bird.y);
   }
 }
 
@@ -325,7 +327,7 @@ function update() {
     waitFrame++;
     groundX  = (groundX - PIPE_SPEED) % 20;
     bird.x = W / 2;
-    if (waitFrame % 37 === 1) { bird.vy = -(GRAVITY * 19); jumpSpawn(bird.x, bird.y); trickSpawn(bird.x, bird.y); }
+    if (waitFrame % 37 === 1) { bird.vy = -(GRAVITY * 19); jumpSpawn(bird.x, bird.y); previewJumpCount++; if (previewJumpCount % 3 === 0) trickSpawn(bird.x, bird.y); }
     bird.vy += GRAVITY;
     bird.y  += bird.vy;
     bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y, H - GROUND_H - BIRD_H / 2 - 8));
@@ -1076,7 +1078,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.15.1', W/2, H - 14);
+      ctx.fillText('v0.16.0', W/2, H - 14);
     }
   }
 
@@ -1271,8 +1273,11 @@ function render() {
   ctx.restore();
 }
 
+const volWrap = document.getElementById('volWrap');
+
 function loop() {
   coinTick++;
+  volWrap.style.display = (state === 'intro1' && intro1Page !== 4) ? 'block' : 'none';
   if (state === 'intro1') ensureIntroMusic();
   if (state !== 'dead' && state !== 'score') {
     for (const c of bgClouds) {
@@ -1479,7 +1484,32 @@ window.addEventListener('resize', updateScale);
 window.addEventListener('orientationchange', () => setTimeout(updateScale, 200));
 updateScale();
 
-const fsBtn = document.getElementById('fsBtn');
+const fsBtn     = document.getElementById('fsBtn');
+const volSlider = document.getElementById('volSlider');
+const volIcon   = document.getElementById('volIcon');
+
+const _VOL_SPK  = '<path d="M2,8 L2,12 L6,12 L10,15 L10,5 L6,8 Z" fill="white"/>';
+const _VOL_W1   = '<path d="M12,8 A3,3,0,0,1,12,12" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>';
+const _VOL_W2   = '<path d="M13.5,6 A5.5,5.5,0,0,1,13.5,14" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>';
+const _VOL_W3   = '<path d="M15,4 A7.5,7.5,0,0,1,15,16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>';
+const _VOL_MUTE = '<line x1="12" y1="7" x2="17" y2="13" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="17" y1="7" x2="12" y2="13" stroke="white" stroke-width="1.5" stroke-linecap="round"/>';
+
+function updateVolIcon() {
+  const v = getMasterVolume();
+  let waves;
+  if (v <= 0.04)      waves = _VOL_MUTE;
+  else if (v <= 0.30) waves = _VOL_W1;
+  else if (v <= 0.70) waves = _VOL_W1 + _VOL_W2;
+  else                waves = _VOL_W1 + _VOL_W2 + _VOL_W3;
+  volIcon.innerHTML = `<svg width="26" height="26" viewBox="0 0 20 20">${_VOL_SPK}${waves}</svg>`;
+}
+
+volSlider.value = getMasterVolume();
+volSlider.addEventListener('input', () => {
+  setMasterVolume(parseFloat(volSlider.value));
+  updateVolIcon();
+});
+updateVolIcon();
 
 const SVG_EXPAND  = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 4.5V1H4.5M8.5 1H12V4.5M12 8.5V12H8.5M4.5 12H1V8.5" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const SVG_COMPRESS = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M4.5 1V4.5H1M12 4.5H8.5V1M8.5 12V8.5H12M1 8.5H4.5V12" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;

@@ -50,6 +50,42 @@ canvas {
 #fsBtn:hover { opacity: 1; }
 #fsBtn svg   { display: block; }
 
+/* ── Volume slider + icone ── */
+#volWrap {
+  position: absolute;
+  bottom: 50px;
+  right: 6px;
+  width: 28px;
+  height: 108px;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+  display: none; /* visible uniquement en intro1, géré par JS */
+}
+#volWrap:hover { opacity: 1; }
+
+#volSlider {
+  position: absolute;
+  top: 29px;   /* centre le CSS box (≈22px) dans la zone slider (80px) */
+  left: -26px; /* décale pour centrer la largeur 80px dans 28px: -(80-28)/2 */
+  width: 80px;
+  transform: rotate(-90deg);
+  transform-origin: center center;
+  cursor: pointer;
+  accent-color: rgba(255,255,255,0.75);
+}
+
+#volIcon {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
 /* Mobile : wrap = plein écran, canvas centré via transform (pas de déformation layout) */
 @media (pointer: coarse) {
   #wrap {
@@ -61,7 +97,7 @@ canvas {
   }
 }
 
-/* Cache le bouton plein écran sur petits écrans phone uniquement */
+/* Cache le bouton plein écran et le volume sur petits écrans phone uniquement */
 @media (pointer: coarse) and (max-width: 500px) {
-  #fsBtn { display: none; }
+  #fsBtn, #volWrap { display: none; }
 }
