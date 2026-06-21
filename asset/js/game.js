@@ -46,10 +46,15 @@ const MENU_BTNS = [
 canvas.width  = W;
 canvas.height = H;
 
+const SHOP_COLS   = 2;
+const SHOP_CARD_W = 182, SHOP_CARD_H = 75;
+const SHOP_GAP_X  = 10,  SHOP_GAP_Y  = 8;
+const SHOP_GRID_X = 13,  SHOP_GRID_Y = 289; // 235 (popY) + 54
+
 // ─────────────────────────────────────────────
 //  STATE
 // ─────────────────────────────────────────────
-let bird, pipes, score, best, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds, deadFrame, deadPage, prevTopScore, intro1Page;
+let bird, pipes, score, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds, deadFrame, deadPage, prevTopScore, intro1Page;
 let mouseX = -1, mouseY = -1;
 let topScores = [];
 let currentScoreRank = -1;
@@ -460,7 +465,7 @@ function update() {
         score++;
         totalCoins++;
         localStorage.setItem('fw_coins', totalCoins);
-        if (score > best) { best = score; localStorage.setItem('fw_best', best); }
+
       }
     }
   }
@@ -1007,47 +1012,45 @@ function drawUI() {
         }
 
         // grille articles (2 col × 3 lignes = 6 par page)
-        const COLS = 2, CARD_W = 182, CARD_H = 75, GAP_X = 10, GAP_Y = 8;
-        const GRID_X = 13, GRID_Y = popY + 54;
         const totalPages = Math.ceil(SHOP_ITEMS.length / 6);
         const pageItems  = SHOP_ITEMS.slice(shopPage * 6, shopPage * 6 + 6);
         pageItems.forEach((item, i) => {
-          const col = i % COLS;
-          const row = Math.floor(i / COLS);
-          const cx  = GRID_X + col * (CARD_W + GAP_X);
-          const cy  = GRID_Y + row * (CARD_H + GAP_Y);
+          const col = i % SHOP_COLS;
+          const row = Math.floor(i / SHOP_COLS);
+          const cx  = SHOP_GRID_X + col * (SHOP_CARD_W + SHOP_GAP_X);
+          const cy  = SHOP_GRID_Y + row * (SHOP_CARD_H + SHOP_GAP_Y);
           const cardSelected = selectedShopItem && selectedShopItem.id === item.id;
-          roundRect(cx, cy, CARD_W, CARD_H, 8, 'rgba(255,255,255,0.07)');
-          if (item.equip)   strokeRoundRect(cx, cy, CARD_W, CARD_H, 8, '#44dd66', 1.5);
-          if (cardSelected) strokeRoundRect(cx, cy, CARD_W, CARD_H, 8, '#ffe033', 1.5);
+          roundRect(cx, cy, SHOP_CARD_W, SHOP_CARD_H, 8, 'rgba(255,255,255,0.07)');
+          if (item.equip)   strokeRoundRect(cx, cy, SHOP_CARD_W, SHOP_CARD_H, 8, '#44dd66', 1.5);
+          if (cardSelected) strokeRoundRect(cx, cy, SHOP_CARD_W, SHOP_CARD_H, 8, '#ffe033', 1.5);
           if (item.lock) {
-            drawLock(cx + CARD_W / 2, cy + 28, '#8B4513');
+            drawLock(cx + SHOP_CARD_W / 2, cy + 28, '#8B4513');
           } else if (item.type === 'skin') {
             ctx.save();
-            ctx.translate(cx + CARD_W / 2, cy + 28);
+            ctx.translate(cx + SHOP_CARD_W / 2, cy + 28);
             ctx.scale(1.6, 1.6);
             sprBird(0, 0, 0, item.pal);
             ctx.restore();
           } else if (item.type === 'trail' && item.trail === 'rainbow') {
-            drawIconRainbow(cx + CARD_W / 2, cy + 28);
+            drawIconRainbow(cx + SHOP_CARD_W / 2, cy + 28);
           } else if (item.type === 'trail' && item.trail === 'cloud') {
-            drawIconCloud(cx + CARD_W / 2, cy + 28);
+            drawIconCloud(cx + SHOP_CARD_W / 2, cy + 28);
           } else if (item.type === 'jump' && item.jump === 'ring') {
-            drawIconJumpRing(cx + CARD_W / 2, cy + 28);
+            drawIconJumpRing(cx + SHOP_CARD_W / 2, cy + 28);
           } else if (item.type === 'jump' && item.jump === 'fart') {
-            drawIconFart(cx + CARD_W / 2, cy + 28);
+            drawIconFart(cx + SHOP_CARD_W / 2, cy + 28);
           } else if (item.type === 'sndJump') {
-            drawIconSndJump(cx + CARD_W / 2, cy + 28);
+            drawIconSndJump(cx + SHOP_CARD_W / 2, cy + 28);
           } else if (item.type === 'jump' && item.jump === 'firework') {
-            drawIconFirework(cx + CARD_W / 2, cy + 28);
+            drawIconFirework(cx + SHOP_CARD_W / 2, cy + 28);
           } else if (item.type === 'trick' && item.trick === 'looping') {
-            drawIconLooping(cx + CARD_W / 2, cy + 28);
+            drawIconLooping(cx + SHOP_CARD_W / 2, cy + 28);
           }
           ctx.fillStyle = item.lock ? '#666666' : '#ffffff';
           ctx.font = 'bold 10px monospace';
           ctx.textAlign = 'center';
-          ctx.fillText(item.name, cx + CARD_W / 2, cy + CARD_H - 9);
-          drawItemBuyState(item, cx, cy, CARD_H);
+          ctx.fillText(item.name, cx + SHOP_CARD_W / 2, cy + SHOP_CARD_H - 9);
+          drawItemBuyState(item, cx, cy, SHOP_CARD_H);
         });
 
         // pagination
@@ -1078,7 +1081,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.16.0', W/2, H - 14);
+      ctx.fillText('v0.16.1', W/2, H - 14);
     }
   }
 
@@ -1353,11 +1356,10 @@ function handlePageBtn(cx, cy) {
     if (hitBtn(cx, cy, BTN_SHOP_NEXT) && shopPage < totalPages - 1) { shopPage++; playSound('nextPage'); selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
     // clic sur une card
     const pageItems = SHOP_ITEMS.slice(shopPage * 6, shopPage * 6 + 6);
-    const cw = 182, ch = 75, gx = 10, gy = 8, gsx = 13, gsy = 235 + 54;
     for (let i = 0; i < pageItems.length; i++) {
-      const cardX = gsx + (i % 2) * (cw + gx);
-      const cardY = gsy + Math.floor(i / 2) * (ch + gy);
-      if (cx >= cardX && cx <= cardX + cw && cy >= cardY && cy <= cardY + ch) {
+      const cardX = SHOP_GRID_X + (i % SHOP_COLS) * (SHOP_CARD_W + SHOP_GAP_X);
+      const cardY = SHOP_GRID_Y + Math.floor(i / SHOP_COLS) * (SHOP_CARD_H + SHOP_GAP_Y);
+      if (cx >= cardX && cx <= cardX + SHOP_CARD_W && cy >= cardY && cy <= cardY + SHOP_CARD_H) {
         if (!pageItems[i].lock) {
           if (selectedShopItem && selectedShopItem.id === pageItems[i].id) { selectedShopItem = null; clearPreview(); }
           else { selectedShopItem = pageItems[i]; setPreview(selectedShopItem); }
@@ -1421,7 +1423,7 @@ if (localStorage.getItem('fw_ver') !== SAVE_VER) {
   localStorage.setItem('fw_ver', SAVE_VER);
 }
 topScores  = JSON.parse(localStorage.getItem('fw_top')) ?? [55, 50, 45, 40, 35, 30, 25, 20, 15, 10];
-best       = parseInt(localStorage.getItem('fw_best')   || '0');
+
 totalCoins = parseInt(localStorage.getItem('fw_coins')  || '0');
 coinTick   = 0;
 

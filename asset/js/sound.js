@@ -11,7 +11,7 @@ const SOUNDS = [
   { id: 'purchase',   file: 'valide02.wav',      loop: false, volume: 7 },
   { id: 'equip',      file: 'Coin02.wav',        loop: false, volume: 7 },
   { id: 'unequip',    file: 'Coin03.mp3',        loop: false, volume: 7 },
-  { id: 'dead',        file: 'Impact01.wav',      loop: false, volume: 8 },
+  { id: 'dead',        file: 'Impact01.wav',      loop: false, volume: 9 },
   { id: 'nextPage',    file: 'nextPage.wav',      loop: false, volume: 6 },
   { id: 'introMusic',  file: 'intro1Music.mp3',   loop: true,  volume: 3 },
   { id: 'startRun',    file: 'Start_Run.mp3',     loop: false, volume: 7 },
@@ -99,16 +99,18 @@ function _stopSound(id) {
 _audioMap['startRun'].addEventListener('ended', () => setTimeout(() => playSound('travelMusic'), 500));
 
 // Impact01.wav terminé → enchaîne musique mort (Dead02 ou pet02 si sndJump_pet équipé)
-_audioMap['dead'].addEventListener('ended', () => playSound(typeof _activeDeadSnd === 'function' ? _activeDeadSnd() : 'deadMusic'));
+_audioMap['dead'].addEventListener('ended', () => playSound(_activeDeadSnd()));
 
 // Dead02.mp3 ou pet02.mp3 terminé → 0.1s → resumeMusic.mp3
-_audioMap['deadMusic'].addEventListener('ended', () => setTimeout(() => playSound('resumeMusic'), 100));
-_audioMap['deadPet'].addEventListener('ended',   () => setTimeout(() => playSound('resumeMusic'), 100));
+let _resumeTimer = null;
+const _scheduleResume = () => { _resumeTimer = setTimeout(() => playSound('resumeMusic'), 100); };
+_audioMap['deadMusic'].addEventListener('ended', _scheduleResume);
+_audioMap['deadPet'].addEventListener('ended',   _scheduleResume);
 
-function playIntroMusic()   { playSound('introMusic'); }
-function stopIntroMusic()   { _stopSound('introMusic'); }
-function stopTravelMusic()  { _stopSound('travelMusic'); }
-function stopResumeMusic()  { _stopSound('resumeMusic'); }
+function playIntroMusic()  { playSound('introMusic'); }
+function stopIntroMusic()  { _stopSound('introMusic'); }
+function stopTravelMusic() { _stopSound('travelMusic'); }
+function stopResumeMusic() { clearTimeout(_resumeTimer); _resumeTimer = null; _stopSound('resumeMusic'); }
 
 // Appelé à chaque frame depuis la boucle de jeu en intro1 :
 // si le chargement est terminé mais la musique est encore en pause

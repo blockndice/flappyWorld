@@ -1,2 +1,5 @@
 asset/img/
 asset/sound/noUse/
+graphify-out/
+.claude/
+CLAUDE.md

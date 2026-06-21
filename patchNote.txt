@@ -37,6 +37,7 @@ v0.14.0 = article jump pet + article Fart + amélioration page 1 game over + bor
 v0.15.0 = article trick Looping + article jump Firework + maintien saut déclenche trick
 v0.15.1 = [HOTFIX] erreur majuscule jump02.mp3 dans le dossier -> Jump02.mp3 dans sound.js
 v0.16.0 = barre de volume + Correctif preview looping
+v0.16.1 = [HOTFIX] stop resumeMusic.mp3 si déclenché hors cycle + review code
 
 ** next step **
 distribution de reward sur une période
