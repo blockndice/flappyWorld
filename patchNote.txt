@@ -40,18 +40,25 @@ v0.16.0 = barre de volume + Correctif preview looping
 v0.16.1 = [HOTFIX] stop resumeMusic.mp3 si déclenché hors cycle + review code
 v0.16.2 = barre volume présent uniquement sur bureau
 v0.16.3 = Shop preview sound jump
+v0.16.4 = Shop Equip new item buy + bannière du jeu
 
 ** next step **
+Shop -> equip l'article nouvellement acheter
 Shop -> 1 page = 1 theme
-distribution de reward sur une période
 profil joueur 
+durant l'intro1, les autres oiseau qui défile sont les profils des autre joueurs avec leur equipement + pseudo
 
 boutique -> échange pièce collecter contre 
 - swap token
 
-mettre une condition pour limiter le nombre de run -> prochain run dans 24h
-- récolté 1000 piece par jour, puis reboot le matin à 7h
-durant l'intro1, les autres oiseau qui défile sont les profils des autre joueurs avec leur equipement + pseudo
+distribution de reward sur une période
+mode mission 
+- recupère 50% d'entrée
+- reward token or article shop
+
+mettre une condition pour limiter le nombre de run en mode adventure -> reboot le matin à 7h
+- récolté 1000 piece par jour,
+- limite à 3 run
 
 cycle
 intro1 → intro2 → countdown → playing → dead → score

@@ -73,6 +73,7 @@ let jumpHeldFrame    = 0;
 let previewJumpCount = 0;
 
 function init() {
+  stopResumeMusic();
   bird    = { x: 90, y: H / 2 - 90, vy: 0, vx: 0, rot: 0, scale: 1 };
   pipes   = [];
   score   = 0;
@@ -296,6 +297,7 @@ function die() {
   jumpHeld              = false;
   jumpHeldFrame         = 0;
   addScore(score);
+  allowResumeMusic();
   state     = 'dead';
   deadFrame = 0;
   deadPage  = 1;
@@ -1081,7 +1083,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.16.3', W/2, H - 14);
+      ctx.fillText('v0.16.4', W/2, H - 14);
     }
   }
 
@@ -1335,7 +1337,7 @@ function handlePageBtn(cx, cy) {
         selectedShopItem.buy = true;
         totalCoins -= selectedShopItem.price;
         localStorage.setItem('fw_coins', totalCoins);
-        saveShopState();
+        equipItem(selectedShopItem, true);
         playSound('purchase');
         shopConfirm = false;
         return true;
@@ -1378,12 +1380,22 @@ function handlePageBtn(cx, cy) {
 canvas.addEventListener('mousemove',  e => { [mouseX, mouseY] = canvasPos(e.clientX, e.clientY); });
 canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; });
 
+// ── CHEAT : maintien 3s sur le soleil en intro1 → unlock tous les articles ──
+let _sunHoldTimer = null;
+function _sunHit(cx, cy) { return state === 'intro1' && Math.hypot(cx - 332, cy - 48) < 28; }
+function _sunHoldStart(cx, cy) {
+  if (!_sunHit(cx, cy)) return;
+  _sunHoldTimer = setTimeout(activateCheat, 3000);
+}
+function _sunHoldCancel() { clearTimeout(_sunHoldTimer); _sunHoldTimer = null; }
+
 canvas.addEventListener('mousedown', e => {
   const [cx, cy] = canvasPos(e.clientX, e.clientY);
+  _sunHoldStart(cx, cy);
   if (!handlePageBtn(cx, cy)) { flap(); jumpHeld = true; jumpHeldFrame = 0; }
 });
-canvas.addEventListener('mouseup',   () => { jumpHeld = false; jumpHeldFrame = 0; });
-canvas.addEventListener('mouseleave', () => { jumpHeld = false; jumpHeldFrame = 0; });
+canvas.addEventListener('mouseup',    () => { _sunHoldCancel(); jumpHeld = false; jumpHeldFrame = 0; });
+canvas.addEventListener('mouseleave', () => { _sunHoldCancel(); jumpHeld = false; jumpHeldFrame = 0; });
 
 canvas.addEventListener('click', e => {
   // garde pour la compatibilité UI (handlePageBtn déjà géré dans mousedown)
@@ -1393,10 +1405,11 @@ canvas.addEventListener('touchstart', e => {
   e.preventDefault();
   const t = e.touches[0];
   const [cx, cy] = canvasPos(t.clientX, t.clientY);
+  _sunHoldStart(cx, cy);
   if (!handlePageBtn(cx, cy)) { flap(); jumpHeld = true; jumpHeldFrame = 0; }
 }, { passive: false });
-canvas.addEventListener('touchend',    () => { jumpHeld = false; jumpHeldFrame = 0; });
-canvas.addEventListener('touchcancel', () => { jumpHeld = false; jumpHeldFrame = 0; });
+canvas.addEventListener('touchend',    () => { _sunHoldCancel(); jumpHeld = false; jumpHeldFrame = 0; });
+canvas.addEventListener('touchcancel', () => { _sunHoldCancel(); jumpHeld = false; jumpHeldFrame = 0; });
 
 document.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp') {

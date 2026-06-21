@@ -248,7 +248,7 @@ function getTrickRotation() {
 // ─────────────────────────────────────────────
 //  ÉQUIPEMENT
 // ─────────────────────────────────────────────
-function equipItem(item) {
+function equipItem(item, silent = false) {
   SHOP_ITEMS.forEach(i => { if (i.type === item.type && i.equip) i.equip = false; });
   item.equip = true;
   if (item.type === 'skin')    playerPal    = item.pal;
@@ -257,7 +257,7 @@ function equipItem(item) {
   if (item.type === 'sndJump') activeJumpSnd = item.snd;
   if (item.type === 'trick')   activeTrick  = item.trick;
   saveShopState();
-  playSound('equip');
+  if (!silent) playSound('equip');
 }
 
 function unequipItem(item) {
@@ -296,6 +296,44 @@ function loadShopState() {
 }
 
 loadShopState();
+
+// ─────────────────────────────────────────────
+//  CHEAT MODE — hold soleil 3s en intro1
+// ─────────────────────────────────────────────
+let cheatMode     = false;
+let _cheatTimer   = null;
+let _cheatSnapshot = null;
+
+function activateCheat() {
+  if (cheatMode) return;
+  cheatMode = true;
+  _cheatSnapshot = {};
+  SHOP_ITEMS.forEach(i => { _cheatSnapshot[i.id] = { buy: i.buy, equip: i.equip }; });
+  SHOP_ITEMS.forEach(i => { i.buy = true; });
+  playSound('evilLaught');
+  _cheatTimer = setTimeout(deactivateCheat, 30 * 60 * 1000);
+}
+
+function deactivateCheat() {
+  if (!cheatMode) return;
+  cheatMode = false;
+  clearTimeout(_cheatTimer);
+  _cheatTimer = null;
+  SHOP_ITEMS.forEach(i => {
+    const s = _cheatSnapshot[i.id];
+    if (s) { i.buy = s.buy; i.equip = s.equip; }
+  });
+  playerPal = 0; activeTrail = null; activeJump = null; activeJumpSnd = null; activeTrick = null;
+  SHOP_ITEMS.forEach(i => {
+    if (!i.equip) return;
+    if (i.type === 'skin')    playerPal    = i.pal;
+    if (i.type === 'trail')   activeTrail  = i.trail;
+    if (i.type === 'jump')    activeJump   = i.jump;
+    if (i.type === 'sndJump') activeJumpSnd = i.snd;
+    if (i.type === 'trick')   activeTrick  = i.trick;
+  });
+  saveShopState();
+}
 
 // ─────────────────────────────────────────────
 //  SHOP CARD — état achat

@@ -19,6 +19,7 @@ const SOUNDS = [
   { id: 'deadMusic',   file: 'Dead02.mp3',        loop: false, volume: 6 },
   { id: 'deadPet',    file: 'pet02.mp3',         loop: false, volume: 6 },
   { id: 'resumeMusic', file: 'resumeMusic.mp3',   loop: true,  volume: 6 },
+  { id: 'evilLaught', file: 'evilLaught.mp3',    loop: false, volume: 9 },
 ];
 
 // ─────────────────────────────────────────────
@@ -102,15 +103,25 @@ _audioMap['startRun'].addEventListener('ended', () => setTimeout(() => playSound
 _audioMap['dead'].addEventListener('ended', () => playSound(_activeDeadSnd()));
 
 // Dead02.mp3 ou pet02.mp3 terminé → 0.1s → resumeMusic.mp3
-let _resumeTimer = null;
-const _scheduleResume = () => { _resumeTimer = setTimeout(() => playSound('resumeMusic'), 100); };
+// _resumeAllowed n'est true qu'entre die() et stopResumeMusic/init — gate dur contre toute fuite d'état
+let _resumeTimer   = null;
+let _resumeAllowed = false;
+function allowResumeMusic() { _resumeAllowed = true; }
+const _scheduleResume = () => {
+  _resumeTimer = setTimeout(() => { if (_resumeAllowed) playSound('resumeMusic'); }, 100);
+};
 _audioMap['deadMusic'].addEventListener('ended', _scheduleResume);
 _audioMap['deadPet'].addEventListener('ended',   _scheduleResume);
 
 function playIntroMusic()  { playSound('introMusic'); }
 function stopIntroMusic()  { _stopSound('introMusic'); }
 function stopTravelMusic() { _stopSound('travelMusic'); }
-function stopResumeMusic() { clearTimeout(_resumeTimer); _resumeTimer = null; _stopSound('resumeMusic'); }
+function stopResumeMusic() {
+  _resumeAllowed = false;
+  clearTimeout(_resumeTimer);
+  _resumeTimer = null;
+  _stopSound('resumeMusic');
+}
 
 // Appelé à chaque frame depuis la boucle de jeu en intro1 :
 // si le chargement est terminé mais la musique est encore en pause
