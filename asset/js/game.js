@@ -830,7 +830,7 @@ function drawUI() {
       ctx.font = 'bold 20px monospace';
       ctx.fillText('FLAPPY WORLD', W/2, H/2 - 14);
 
-      // Badge Demo
+      // Badge ALPHA
       ctx.save();
       ctx.translate(252, 294);
       ctx.rotate(-15 * Math.PI / 180);
@@ -844,7 +844,7 @@ function drawUI() {
       ctx.textBaseline = 'alphabetic';
 
       if (soundsReady) {
-        const _t = (Date.now() % 3500) / 3500; // cycle 3.5s : 2.5s visible, 1s masqué
+        const _t = (Date.now() % 3500) / 3500;
         const _vis = 2.5 / 3.5, _fade = 0.07;
         let _pulse;
         if      (_t < _fade)         _pulse = _t / _fade;
@@ -859,14 +859,15 @@ function drawUI() {
         ctx.globalAlpha = 1;
       } else {
         const progress = getSoundProgress();
-        const barW = 160, barH = 8, barX = W/2 - 80, barY = H/2 + 4;
+        const barW = 180, barH = 5, barX = W/2 - 90, barY = H/2 - 10;
         ctx.fillStyle = 'rgba(255,255,255,0.15)';
         ctx.fillRect(barX, barY, barW, barH);
         ctx.fillStyle = '#ffe033';
         ctx.fillRect(barX, barY, barW * progress, barH);
-        ctx.fillStyle = '#aaaaaa';
-        ctx.font = '11px monospace';
-        ctx.fillText('load', W/2, H/2 + 25);
+        const _fname = getLoadingFile().replace(/\.[^.]+$/, '');
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px monospace';
+        ctx.fillText(_fname, W/2, H/2 + 5);
       }
 
     } else if (intro1Page === 2) {
@@ -1110,7 +1111,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.17.2', W/2, H - 14);
+      ctx.fillText('v0.17.3', W/2, H - 14);
     }
   }
 

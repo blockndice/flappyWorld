@@ -54,23 +54,31 @@ function getMasterVolume() { return _masterVol; }
 // ─────────────────────────────────────────────
 //  CHARGEMENT
 // ─────────────────────────────────────────────
-let _loadedCount  = 0;
-const _totalCount = SOUNDS.length;
-let soundsReady   = false;
+let _loadedCount      = 0;
+const _totalCount     = SOUNDS.length;
+let soundsReady       = false;
+let _currentLoadFile  = '';
+
+function getLoadingFile() { return _currentLoadFile; }
 
 function _onAudioReady() {
   _loadedCount = Math.min(_loadedCount + 1, _totalCount);
   if (_loadedCount >= _totalCount) {
     soundsReady = true;
-    setMasterVolume(_masterVol); // applique le volume sauvegardé
+    setMasterVolume(_masterVol);
     playIntroMusic();
   }
 }
 
-Object.values(_audioMap).forEach(a => {
-  if (a.readyState >= 4) { _onAudioReady(); return; }
-  a.addEventListener('canplaythrough', _onAudioReady, { once: true });
-});
+for (const s of SOUNDS) {
+  const a = _audioMap[s.id];
+  const _done = () => { _currentLoadFile = s.file; _onAudioReady(); };
+  if (a.readyState >= 4) { _done(); }
+  else {
+    a.addEventListener('canplaythrough', _done, { once: true });
+    a.addEventListener('error',          _done, { once: true }); // évite le blocage si fichier inaccessible
+  }
+}
 
 function getSoundProgress() {
   return _totalCount > 0 ? _loadedCount / _totalCount : 1;
