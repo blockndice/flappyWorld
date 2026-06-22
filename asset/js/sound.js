@@ -72,11 +72,13 @@ function _onAudioReady() {
 
 for (const s of SOUNDS) {
   const a = _audioMap[s.id];
-  const _done = () => { _currentLoadFile = s.file; _onAudioReady(); };
+  let _fired = false;
+  const _done = () => { if (_fired) return; _fired = true; _currentLoadFile = s.file; _onAudioReady(); };
   if (a.readyState >= 4) { _done(); }
   else {
     a.addEventListener('canplaythrough', _done, { once: true });
-    a.addEventListener('error',          _done, { once: true }); // évite le blocage si fichier inaccessible
+    a.addEventListener('error',          _done, { once: true });
+    setTimeout(_done, 5000); // fallback si le navigateur ne déclenche ni canplaythrough ni error
   }
 }
 

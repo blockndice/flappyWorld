@@ -1231,7 +1231,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.19.0', W/2, H - 14);
+      ctx.fillText('v0.19.1', W/2, H - 14);
     }
   }
 
