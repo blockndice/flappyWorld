@@ -46,6 +46,7 @@ v0.17.1 = amélioration ecran titre
 v0.17.2 = vitesse de jeu uniforme sur tous les écrans et support
 v0.17.3 = fichier affiché en chargement + [HOTFIX] blocage chargement son inaccessible
 v0.18.0 = article trail Miasma + article skin multicolor + grosse animation jump lors d'un impact 
+v0.19.0 = article skin Phosphor + article trick Toupie
 
 ** next step **
 Shop -> 1 page = 1 theme

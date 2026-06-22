@@ -11,6 +11,8 @@ const GRAVITY       = 0.38;
 const FLAP_VY       = -7.6;
 const FLOAT_FRAMES  = 14;   // frames de gravity réduite après un saut (maintien bouton)
 const FLOAT_GRAVITY = 0.10; // gravity appliquée pendant le float
+const GLIDE_TARGET_VY = 0.3;  // vitesse cible descente toupie planeur
+const GLIDE_DAMP      = 0.12; // amortissement vers la cible (lerp par frame)
 const PIPE_SPEED = 2.4;
 const PIPE_W     = 54;
 const PIPE_GAP   = 130;
@@ -185,8 +187,8 @@ const COIN_FILL = [
 const COIN_SHINE  = [[1,1],[2,1],[1,2]];
 const COIN_SHADOW = [[3,3],[2,4],[3,4]];
 
-function sprBird(x, y, rot, pal = 0) {
-  const [body, light, dark] = BIRD_PALS[pal % BIRD_PALS.length];
+function sprBird(x, y, rot, pal = 0, colors = null) {
+  const [body, light, dark] = colors || BIRD_PALS[Math.max(0, pal) % BIRD_PALS.length];
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rot);
@@ -296,6 +298,7 @@ function die() {
   jumpEffects.length    = 0;
   trickEffects.length   = 0;
   loopingFrame          = 0;
+  toupieFrame           = 0;
   jumpCount             = 0;
   jumpHeld              = false;
   jumpHeldFrame         = 0;
@@ -329,7 +332,8 @@ function flap() {
   jumpSpawn(bird.x, bird.y);
   if (state === 'playing') {
     jumpCount++;
-    if (_activeTrick() && jumpCount % 4 === 0) trickSpawn(bird.x, bird.y);
+    if (_activeTrick() && _activeTrick() !== 'toupie' && jumpCount % 3 === 0) trickSpawn(bird.x, bird.y);
+    if (_activeTrick() === 'toupie' && jumpCount % 3 === 0 && toupieFrame === 0) toupieFrame = 1;
   }
 }
 
@@ -345,6 +349,7 @@ function update() {
     trailTick(bird.x, bird.y);
     jumpTick();
     trickTick();
+    skinAnimTick();
     bird.rot = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
 
     if (Math.random() < 0.012) {
@@ -438,11 +443,12 @@ function update() {
   trailTick(bird.x, bird.y);
   jumpTick();
   trickTick();
+  skinAnimTick();
 
-  // maintien du saut : float + trick continu si trick équipé
+  // maintien du saut : toupie = planeur, autres = un seul saut par impulsion
   if (jumpHeld) {
     jumpHeldFrame++;
-    if (_activeTrick() && jumpHeldFrame % 22 === 0) {
+    if (_activeTrick() === 'looping' && jumpHeldFrame % 22 === 0) {
       bird.vy = FLAP_VY;
       advanceMulticolor();
       playSound(_activeJumpSnd() || 'jump');
@@ -453,8 +459,14 @@ function update() {
     jumpHeldFrame = 0;
   }
 
-  const _grav = (jumpHeld && jumpHeldFrame <= FLOAT_FRAMES) ? FLOAT_GRAVITY : GRAVITY;
-  bird.vy  += _grav;
+  const isToupieGlide = jumpHeld && _activeTrick() === 'toupie' && bird.vy >= 0;
+  if (isToupieGlide) {
+    if (toupieFrame === 0) toupieFrame = 1;
+    bird.vy += (GLIDE_TARGET_VY - bird.vy) * GLIDE_DAMP;
+  } else {
+    const _grav = (jumpHeld && jumpHeldFrame <= FLOAT_FRAMES) ? FLOAT_GRAVITY : GRAVITY;
+    bird.vy += _grav;
+  }
   bird.y   += bird.vy;
   bird.rot  = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
 
@@ -557,23 +569,21 @@ function drawIconCloud(cx, cy) {
 }
 
 function drawIconMiasma(cx, cy) {
-  const bubbles = [
-    { ox: -14, oy:  4, r: 3.5, h: 95 },
-    { ox:  -5, oy: -4, r: 4.5, h: 100 },
-    { ox:   5, oy:  2, r: 3,   h: 88 },
-    { ox:  14, oy: -6, r: 4,   h: 108 },
-    { ox:   0, oy: -12, r: 2.5, h: 92 },
-  ];
-  for (const b of bubbles) {
+  const hues   = [90, 100, 88, 108, 95, 85, 100, 92, 105, 88];
+  const S = 4.5, GAP = 11, N = 10;
+  const startX = cx - ((N - 1) * GAP) / 2;
+  for (let i = 0; i < N; i++) {
+    const r = S / 2;
+    const bx = startX + i * GAP, by = cy;
     ctx.save();
-    ctx.globalAlpha = 0.82;
-    ctx.fillStyle = `hsl(${b.h},65%,52%)`;
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = `hsl(${hues[i]},65%,52%)`;
     ctx.beginPath();
-    ctx.arc(cx + b.ox, cy + b.oy, b.r, 0, Math.PI * 2);
+    ctx.arc(bx, by, r, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.4)';
     ctx.beginPath();
-    ctx.arc(cx + b.ox - b.r * 0.3, cy + b.oy - b.r * 0.35, b.r * 0.32, 0, Math.PI * 2);
+    ctx.arc(bx - r * 0.3, by - r * 0.35, r * 0.32, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -583,30 +593,56 @@ function drawIconMulticolor(cx, cy, scale) {
   ctx.save();
   ctx.translate(cx, cy);
   ctx.scale(scale, scale);
-  // 4 bandes diagonales pixel art (x+y divisé en 4 zones sur [-24, 24])
-  const colors = ['#4caf50', '#2196f3', '#9c27b0', '#f44336'];
-  const off = 5, rng = 26 + off * 2;
-  for (let i = 0; i < 4; i++) {
-    const dMin = -(rng / 2) + i * (rng / 4), dMax = dMin + rng / 4;
-    const tlx = Math.max(-13, dMin + off), trx = Math.min(13, dMax + off);
-    const blx = Math.max(-13, dMin - off), brx = Math.min(13, dMax - off);
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(tlx, -11); ctx.lineTo(trx, -11);
-    ctx.lineTo(brx,  11); ctx.lineTo(blx,  11);
-    ctx.closePath();
-    ctx.clip();
-    ctx.fillStyle = colors[i];
-    ctx.fillRect(-13, -11, 26, 22);
-    ctx.restore();
-  }
-  // détails pixel art par-dessus
-  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(-9, 3, 16, 6);
-  ctx.fillStyle = 'rgba(0,0,0,0.18)';       ctx.fillRect(-13, 0, 10, 7);
+  sprBird(0, 0, 0, 0, getMulticolorBlendColors());
+  ctx.restore();
+}
+
+function drawIconPhosphor(cx, cy, scale) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+  const colors = getPhosphorColors();
+  ctx.beginPath();
+  ctx.rect(-13, -11, 26, 22);
+  ctx.clip();
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(-13, -11, 26, 22);
+  ctx.restore();
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+  ctx.fillStyle = colors[1]; ctx.fillRect(-9, 3, 16, 6);
+  ctx.fillStyle = colors[2]; ctx.fillRect(-13, 0, 10, 7);
   ctx.fillStyle = '#fff'; ctx.fillRect(3, -8, 9, 9);
   ctx.fillStyle = '#111'; ctx.fillRect(7, -5, 4, 4);
   ctx.fillStyle = '#f80'; ctx.fillRect(11, -3, 9, 5);
   ctx.fillStyle = '#c60'; ctx.fillRect(11,  1, 9, 2);
+  ctx.restore();
+}
+
+function drawIconToupie(cx, cy) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.lineCap = 'round';
+  for (let arm = 0; arm < 3; arm++) {
+    const base  = (arm / 3) * Math.PI * 2;
+    const steps = 36;
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const t     = i / steps;
+      const angle = base + t * Math.PI * 1.3;
+      const r     = 13 * (1 - t * 0.76);
+      if (i === 0) ctx.moveTo(Math.cos(angle) * r, Math.sin(angle) * r);
+      else         ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+    }
+    ctx.strokeStyle = `rgba(255,255,255,${0.9 - arm * 0.22})`;
+    ctx.lineWidth   = 2.6 - arm * 0.35;
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.beginPath();
+  ctx.arc(0, 0, 2.2, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 
@@ -701,21 +737,38 @@ function drawIconFirework(cx, cy) {
 function drawIconLooping(cx, cy) {
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+
+  const R = 10;
+
+  // cercle pointillé (trajectoire)
+  ctx.setLineDash([3, 4]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.arc(0, 4, 12, 0, Math.PI * 2);
+  ctx.arc(0, 0, R, 0, Math.PI * 2);
   ctx.stroke();
-  // tête de flèche sur le cercle indiquant le sens du looping
-  const aa = -Math.PI / 3;
-  ctx.save();
-  ctx.translate(Math.cos(aa) * 12, Math.sin(aa) * 12 + 4);
-  ctx.rotate(aa + Math.PI / 2 + 0.4);
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.setLineDash([]);
+
+  // flèche circulaire (sens du looping : 300° de sweep)
+  ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+  ctx.lineWidth = 2.5;
   ctx.beginPath();
-  ctx.moveTo(0, -5); ctx.lineTo(-3, 2); ctx.lineTo(3, 2);
+  ctx.arc(0, 0, R, -Math.PI * 0.7, Math.PI * 0.85);
+  ctx.stroke();
+
+  // tête de flèche au bout de l'arc
+  const tipA = Math.PI * 0.85;
+  const tx = Math.cos(tipA) * R, ty = Math.sin(tipA) * R;
+  ctx.save();
+  ctx.translate(tx, ty);
+  ctx.rotate(tipA + Math.PI / 2 + 0.45);
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.beginPath();
+  ctx.moveTo(0, -4.5); ctx.lineTo(-3, 2); ctx.lineTo(3, 2);
   ctx.closePath(); ctx.fill();
   ctx.restore();
+
   ctx.restore();
 }
 
@@ -1035,6 +1088,7 @@ function drawUI() {
         strokeRoundRect(cardX, cardY, CW, CH, 10, '#ffe033', 2);
         if (item.type === 'skin') {
           if (item.pal === 99) { drawIconMulticolor(cardX + CW / 2, cardY + 44, 2.4); }
+          else if (item.pal === 98) { drawIconPhosphor(cardX + CW / 2, cardY + 44, 2.4); }
           else { ctx.save(); ctx.translate(cardX + CW / 2, cardY + 44); ctx.scale(2.4, 2.4); sprBird(0, 0, 0, item.pal); ctx.restore(); }
         } else if (item.type === 'trail' && item.trail === 'rainbow') {
           drawIconRainbow(cardX + CW / 2, cardY + 50);
@@ -1052,6 +1106,8 @@ function drawUI() {
           drawIconFirework(cardX + CW / 2, cardY + 50);
         } else if (item.type === 'trick' && item.trick === 'looping') {
           drawIconLooping(cardX + CW / 2, cardY + 50);
+        } else if (item.type === 'trick' && item.trick === 'toupie') {
+          drawIconToupie(cardX + CW / 2, cardY + 50);
         }
         ctx.font = 'bold 13px monospace';
         ctx.fillStyle = '#ffffff';
@@ -1119,6 +1175,7 @@ function drawUI() {
             drawLock(cx + SHOP_CARD_W / 2, cy + 28, '#8B4513');
           } else if (item.type === 'skin') {
             if (item.pal === 99) { drawIconMulticolor(cx + SHOP_CARD_W / 2, cy + 28, 1.6); }
+            else if (item.pal === 98) { drawIconPhosphor(cx + SHOP_CARD_W / 2, cy + 28, 1.6); }
             else { ctx.save(); ctx.translate(cx + SHOP_CARD_W / 2, cy + 28); ctx.scale(1.6, 1.6); sprBird(0, 0, 0, item.pal); ctx.restore(); }
           } else if (item.type === 'trail' && item.trail === 'rainbow') {
             drawIconRainbow(cx + SHOP_CARD_W / 2, cy + 28);
@@ -1136,6 +1193,8 @@ function drawUI() {
             drawIconFirework(cx + SHOP_CARD_W / 2, cy + 28);
           } else if (item.type === 'trick' && item.trick === 'looping') {
             drawIconLooping(cx + SHOP_CARD_W / 2, cy + 28);
+          } else if (item.type === 'trick' && item.trick === 'toupie') {
+            drawIconToupie(cx + SHOP_CARD_W / 2, cy + 28);
           }
           ctx.fillStyle = item.lock ? '#666666' : '#ffffff';
           ctx.font = 'bold 10px monospace';
@@ -1172,7 +1231,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.18.0', W/2, H - 14);
+      ctx.fillText('v0.19.0', W/2, H - 14);
     }
   }
 
@@ -1357,8 +1416,8 @@ function render() {
   trickDraw();
   ctx.save();
   ctx.translate(bird.x, bird.y);
-  ctx.scale(bird.scale, bird.scale);
-  sprBird(0, 0, bird.rot + getTrickRotation(), getPreviewPal());
+  ctx.scale(bird.scale, bird.scale * getToupieScaleX());
+  sprBird(0, 0, bird.rot + getTrickRotation(), getPreviewPal(), getSkinColors());
   ctx.restore();
 
   if (doZoom) ctx.restore(); // fin zoom scène — UI reste à l'échelle normale
@@ -1419,7 +1478,7 @@ function handlePageBtn(cx, cy) {
     if (hitBtn(cx, cy, BTN_BACK_I1)) { intro1Page = 1; return true; }
     for (const btn of MENU_BTNS) {
       if (hitBtn(cx, cy, btn)) {
-        if (btn.action === 'freerun')    { stopIntroMusic(); playSound('startRun'); state = 'intro2'; intro2Frame = 0; trailParticles.length = 0; jumpEffects.length = 0; trickEffects.length = 0; loopingFrame = 0; jumpCount = 0; }
+        if (btn.action === 'freerun')    { stopIntroMusic(); playSound('startRun'); state = 'intro2'; intro2Frame = 0; trailParticles.length = 0; jumpEffects.length = 0; trickEffects.length = 0; loopingFrame = 0; toupieFrame = 0; jumpCount = 0; }
         if (btn.action === 'historique') { intro1Page = 3; }
         if (btn.action === 'shop')       { intro1Page = 4; shopZoom = 2; shopPanX = 0; shopPanY = 54; shopPage = 0; }
         return true;

@@ -9,22 +9,27 @@ const SHOP_ITEMS = [
   { id: 'skin_violet',   name: 'Violet',   price: 20,  type: 'skin',  pal: 5,           lock: false, buy: false, equip: false },
   { id: 'skin_orange',   name: 'Orange',   price: 25,  type: 'skin',  pal: 6,           lock: false, buy: false, equip: false },
   { id: 'skin_multicolor', name: 'Multicolor', price: 80, type: 'skin', pal: 99,          lock: false, buy: false, equip: false },
-  { id: 'trick_looping',  name: 'Looping',  price: 100, type: 'trick',   trick: 'looping',  lock: false, buy: false, equip: false },
+  { id: 'trick_toupie',  name: 'Toupie',   price: 60,  type: 'trick',   trick: 'toupie',  lock: false, buy: false, equip: false },
   { id: 'trail_rainbow', name: 'Arc-ciel', price: 400, type: 'trail',   trail: 'rainbow', lock: false, buy: false, equip: false },
   { id: 'trail_cloud',   name: 'Nuage',    price: 30,  type: 'trail',   trail: 'cloud',   lock: false, buy: false, equip: false },
   { id: 'trick_firework', name: 'Firework', price: 80,  type: 'jump',    jump:  'firework', lock: false, buy: false, equip: false },
   { id: 'jump_ring',     name: 'Anneau',   price: 35,  type: 'jump',    jump:  'ring',    lock: false, buy: false, equip: false },
-  { id: 'skin_vert',     name: 'Vert',     price: 10,  type: 'skin',  pal: 1,           lock: false, buy: false, equip: false },
-  { id: 'jump_fart',    name: 'Fart',     price: 30,  type: 'jump',    jump:  'fart',    lock: false, buy: false, equip: false },
-  { id: 'sndJump_pet',    name: 'Pet',      price: 20,  type: 'sndJump', snd:   'jumpPet',   lock: false, buy: false, equip: false },
+  { id: 'skin_phosphor', name: 'Phosphor',  price: 35,  type: 'skin',  pal: 98,          lock: false, buy: false, equip: false },
+  { id: 'trick_looping',  name: 'pirouette',  price: 100, type: 'trick',   trick: 'looping',  lock: false, buy: false, equip: false },
   { id: 'trail_miasma',  name: 'Miasma',   price: 45,  type: 'trail',   trail: 'miasma',  lock: false, buy: false, equip: false },
+  { id: 'sndJump_pet',    name: 'Pet',      price: 20,  type: 'sndJump', snd:   'jumpPet',   lock: false, buy: false, equip: false },
+  { id: 'jump_fart',    name: 'Fart',     price: 30,  type: 'jump',    jump:  'fart',    lock: false, buy: false, equip: false },
 ];
 
 // ─────────────────────────────────────────────
 //  ÉTAT ACTIF DU JOUEUR
 // ─────────────────────────────────────────────
-let playerPal    = 0;    // palette équipée (0 = jaune défaut, 99 = multicolor)
-let _multicolorPal = 1; // palette courante du skin multicolor (1-7)
+let playerPal        = 0;  // palette équipée (0=jaune, 98=phosphor, 99=multicolor)
+let _multicolorPal     = 1; // palette 'from' du multicolor
+let _multicolorNextPal = 1; // palette 'to' du multicolor
+let _multicolorBlend   = 1; // 0→1 lerp entre from et to
+let _multicolorIdle    = 0; // compteur auto-cycle entre deux transitions
+let _phosphorPhase     = 0; // phase d'oscillation phosphor (radians)
 let activeTrail  = null; // 'rainbow' | 'cloud' | null
 let activeJump   = null; // 'ring' | 'fart' | null
 let activeJumpSnd = null; // 'jumpPet' | null
@@ -41,6 +46,7 @@ function setPreview(item) {
   jumpEffects.length    = 0;
   trickEffects.length   = 0;
   loopingFrame          = 0;
+  toupieFrame           = 0;
 }
 
 function clearPreview() {
@@ -49,6 +55,7 @@ function clearPreview() {
   jumpEffects.length    = 0;
   trickEffects.length   = 0;
   loopingFrame          = 0;
+  toupieFrame           = 0;
 }
 
 function getPreviewPal() {
@@ -58,7 +65,51 @@ function getPreviewPal() {
 
 function advanceMulticolor() {
   if (playerPal !== 99 && !(previewedItem && previewedItem.pal === 99)) return;
-  _multicolorPal = (_multicolorPal % 7) + 1;
+  if (_multicolorBlend < 1) _multicolorPal = _multicolorNextPal; // snap si déjà en transition
+  _multicolorNextPal = (_multicolorPal % 7) + 1;
+  _multicolorBlend   = 0;
+}
+
+function _lerpHex(a, b, t) {
+  const p = h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+  const [ar,ag,ab] = p(a), [br,bg,bb] = p(b);
+  const h = v => Math.round(v).toString(16).padStart(2,'0');
+  return `#${h(ar+(br-ar)*t)}${h(ag+(bg-ag)*t)}${h(ab+(bb-ab)*t)}`;
+}
+
+function getPhosphorColors() {
+  const t = (Math.sin(_phosphorPhase) + 1) / 2;
+  return [
+    `hsl(128,95%,${28+Math.round(t*30)}%)`,  // body  : 28%→58%
+    `hsl(128,85%,${44+Math.round(t*24)}%)`,  // light : 44%→68%
+    `hsl(128,100%,${14+Math.round(t*18)}%)`, // dark  : 14%→32%
+  ];
+}
+
+function getMulticolorBlendColors() {
+  if (_multicolorBlend >= 1) return [...BIRD_PALS[_multicolorPal]];
+  return BIRD_PALS[_multicolorPal].map((c, i) => _lerpHex(c, BIRD_PALS[_multicolorNextPal][i], _multicolorBlend));
+}
+
+function getSkinColors() {
+  const pal = (previewedItem && previewedItem.type === 'skin') ? previewedItem.pal : playerPal;
+  if (pal === 98) return getPhosphorColors();
+  if (pal === 99) return getMulticolorBlendColors();
+  return null;
+}
+
+function skinAnimTick() {
+  _phosphorPhase = (_phosphorPhase + 0.05) % (Math.PI * 2);
+  if (_multicolorBlend < 1) {
+    _multicolorBlend = Math.min(1, _multicolorBlend + 0.06);
+    if (_multicolorBlend >= 1) { _multicolorPal = _multicolorNextPal; _multicolorIdle = 0; }
+  } else {
+    _multicolorIdle++;
+    if (_multicolorIdle >= 55) { // ~0.9s entre chaque couleur
+      _multicolorNextPal = (_multicolorPal % 7) + 1;
+      _multicolorBlend   = 0;
+    }
+  }
 }
 
 function _activeTrail() {
@@ -303,6 +354,8 @@ function jumpDraw() {
 const trickEffects  = [];
 let   loopingFrame  = 0;
 const LOOPING_TOTAL = 32;
+let   toupieFrame   = 0;
+const TOUPIE_TOTAL  = 28; // ~durée d'un saut (20 frames montée + atterrissage)
 
 function trickSpawn(bx, by) {
   const trick = _activeTrick();
@@ -321,6 +374,8 @@ function trickSpawn(bx, by) {
     }
   } else if (trick === 'looping' && loopingFrame === 0) {
     loopingFrame = 1;
+  } else if (trick === 'toupie' && toupieFrame === 0) {
+    toupieFrame = 1;
   }
 }
 
@@ -337,6 +392,10 @@ function trickTick() {
     loopingFrame++;
     if (loopingFrame > LOOPING_TOTAL) loopingFrame = 0;
   }
+  if (toupieFrame > 0) {
+    toupieFrame++;
+    if (toupieFrame > TOUPIE_TOTAL) toupieFrame = 0;
+  }
 }
 
 function trickDraw() {
@@ -352,6 +411,11 @@ function trickDraw() {
 function getTrickRotation() {
   if (loopingFrame <= 0) return 0;
   return (loopingFrame / LOOPING_TOTAL) * Math.PI * 2;
+}
+
+function getToupieScaleX() {
+  if (toupieFrame <= 0) return 1;
+  return Math.cos(toupieFrame * (Math.PI * 2 / TOUPIE_TOTAL)); // 1 flip complet
 }
 
 // ─────────────────────────────────────────────
