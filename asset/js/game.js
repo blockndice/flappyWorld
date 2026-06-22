@@ -57,6 +57,7 @@ const SHOP_GRID_X = 13,  SHOP_GRID_Y = 289; // 235 (popY) + 54
 //  STATE
 // ─────────────────────────────────────────────
 let bird, pipes, score, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds, deadFrame, deadPage, prevTopScore, intro1Page;
+let _impactX = 0, _impactY = 0, _impactBaseAngle = 0;
 let mouseX = -1, mouseY = -1;
 let topScores = [];
 let currentScoreRank = -1;
@@ -323,6 +324,7 @@ function flap() {
     return; // page 2 : géré par handlePageBtn
   }
   bird.vy = FLAP_VY;
+  advanceMulticolor();
   playSound(_activeJumpSnd() || 'jump');
   jumpSpawn(bird.x, bird.y);
   if (state === 'playing') {
@@ -336,7 +338,7 @@ function update() {
     waitFrame++;
     groundX  = (groundX - PIPE_SPEED) % 20;
     bird.x = W / 2;
-    if (waitFrame % 37 === 1) { bird.vy = -(GRAVITY * 19); if (intro1Page === 4 && previewedItem && previewedItem.type === 'sndJump') playSound(_activeJumpSnd()); jumpSpawn(bird.x, bird.y); previewJumpCount++; if (previewJumpCount % 3 === 0) trickSpawn(bird.x, bird.y); }
+    if (waitFrame % 37 === 1) { bird.vy = -(GRAVITY * 19); advanceMulticolor(); if (intro1Page === 4 && previewedItem && previewedItem.type === 'sndJump') playSound(_activeJumpSnd()); jumpSpawn(bird.x, bird.y); previewJumpCount++; if (previewJumpCount % 3 === 0) trickSpawn(bird.x, bird.y); }
     bird.vy += GRAVITY;
     bird.y  += bird.vy;
     bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y, H - GROUND_H - BIRD_H / 2 - 8));
@@ -416,7 +418,9 @@ function update() {
   if (state === 'dead') {
     deadFrame++;
     if (deadFrame >= 21) {
-      if (deadFrame === 21) { bird.vy = -(3 + Math.random() * 13); bird.vx = (Math.random() - 0.5) * 14; }
+      if (deadFrame === 21) { bird.vy = -(3 + Math.random() * 13); bird.vx = (Math.random() - 0.5) * 14; _impactX = bird.x; _impactY = bird.y; _impactBaseAngle = Math.random() * Math.PI * 2; }
+      const _impactIdx = [21, 31, 41, 51, 61].indexOf(deadFrame);
+      if (_impactIdx >= 0) { jumpSpawn(_impactX, _impactY, 1, true, _impactBaseAngle + (_impactIdx / 5) * Math.PI * 2); }
       bird.vy    += GRAVITY;
       bird.y     += bird.vy;
       bird.x     += bird.vx;
@@ -424,6 +428,7 @@ function update() {
       bird.rot    = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
       if (bird.y > H + 80) { state = 'score'; deadFrame = 0; }
     }
+    jumpTick();
     return;
   }
   if (state === 'score') { deadFrame++; return; }
@@ -439,6 +444,7 @@ function update() {
     jumpHeldFrame++;
     if (_activeTrick() && jumpHeldFrame % 22 === 0) {
       bird.vy = FLAP_VY;
+      advanceMulticolor();
       playSound(_activeJumpSnd() || 'jump');
       jumpSpawn(bird.x, bird.y);
       trickSpawn(bird.x, bird.y);
@@ -548,6 +554,60 @@ function drawIconCloud(cx, cy) {
     ctx.fillStyle = `rgba(255,255,255,${a})`;
     ctx.fillRect(startX + i * GAP - S / 2, cy - S / 2, S, S);
   }
+}
+
+function drawIconMiasma(cx, cy) {
+  const bubbles = [
+    { ox: -14, oy:  4, r: 3.5, h: 95 },
+    { ox:  -5, oy: -4, r: 4.5, h: 100 },
+    { ox:   5, oy:  2, r: 3,   h: 88 },
+    { ox:  14, oy: -6, r: 4,   h: 108 },
+    { ox:   0, oy: -12, r: 2.5, h: 92 },
+  ];
+  for (const b of bubbles) {
+    ctx.save();
+    ctx.globalAlpha = 0.82;
+    ctx.fillStyle = `hsl(${b.h},65%,52%)`;
+    ctx.beginPath();
+    ctx.arc(cx + b.ox, cy + b.oy, b.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.beginPath();
+    ctx.arc(cx + b.ox - b.r * 0.3, cy + b.oy - b.r * 0.35, b.r * 0.32, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function drawIconMulticolor(cx, cy, scale) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+  // 4 bandes diagonales pixel art (x+y divisé en 4 zones sur [-24, 24])
+  const colors = ['#4caf50', '#2196f3', '#9c27b0', '#f44336'];
+  const off = 5, rng = 26 + off * 2;
+  for (let i = 0; i < 4; i++) {
+    const dMin = -(rng / 2) + i * (rng / 4), dMax = dMin + rng / 4;
+    const tlx = Math.max(-13, dMin + off), trx = Math.min(13, dMax + off);
+    const blx = Math.max(-13, dMin - off), brx = Math.min(13, dMax - off);
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(tlx, -11); ctx.lineTo(trx, -11);
+    ctx.lineTo(brx,  11); ctx.lineTo(blx,  11);
+    ctx.closePath();
+    ctx.clip();
+    ctx.fillStyle = colors[i];
+    ctx.fillRect(-13, -11, 26, 22);
+    ctx.restore();
+  }
+  // détails pixel art par-dessus
+  ctx.fillStyle = 'rgba(255,255,255,0.25)'; ctx.fillRect(-9, 3, 16, 6);
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';       ctx.fillRect(-13, 0, 10, 7);
+  ctx.fillStyle = '#fff'; ctx.fillRect(3, -8, 9, 9);
+  ctx.fillStyle = '#111'; ctx.fillRect(7, -5, 4, 4);
+  ctx.fillStyle = '#f80'; ctx.fillRect(11, -3, 9, 5);
+  ctx.fillStyle = '#c60'; ctx.fillRect(11,  1, 9, 2);
+  ctx.restore();
 }
 
 function drawIconJumpRing(cx, cy) {
@@ -974,12 +1034,14 @@ function drawUI() {
         roundRect(cardX, cardY, CW, CH, 10, 'rgba(255,255,255,0.10)');
         strokeRoundRect(cardX, cardY, CW, CH, 10, '#ffe033', 2);
         if (item.type === 'skin') {
-          ctx.save(); ctx.translate(cardX + CW / 2, cardY + 44); ctx.scale(2.4, 2.4);
-          sprBird(0, 0, 0, item.pal); ctx.restore();
+          if (item.pal === 99) { drawIconMulticolor(cardX + CW / 2, cardY + 44, 2.4); }
+          else { ctx.save(); ctx.translate(cardX + CW / 2, cardY + 44); ctx.scale(2.4, 2.4); sprBird(0, 0, 0, item.pal); ctx.restore(); }
         } else if (item.type === 'trail' && item.trail === 'rainbow') {
           drawIconRainbow(cardX + CW / 2, cardY + 50);
         } else if (item.type === 'trail' && item.trail === 'cloud') {
           drawIconCloud(cardX + CW / 2, cardY + 50);
+        } else if (item.type === 'trail' && item.trail === 'miasma') {
+          drawIconMiasma(cardX + CW / 2, cardY + 50);
         } else if (item.type === 'jump' && item.jump === 'ring') {
           drawIconJumpRing(cardX + CW / 2, cardY + 50);
         } else if (item.type === 'jump' && item.jump === 'fart') {
@@ -1056,15 +1118,14 @@ function drawUI() {
           if (item.lock) {
             drawLock(cx + SHOP_CARD_W / 2, cy + 28, '#8B4513');
           } else if (item.type === 'skin') {
-            ctx.save();
-            ctx.translate(cx + SHOP_CARD_W / 2, cy + 28);
-            ctx.scale(1.6, 1.6);
-            sprBird(0, 0, 0, item.pal);
-            ctx.restore();
+            if (item.pal === 99) { drawIconMulticolor(cx + SHOP_CARD_W / 2, cy + 28, 1.6); }
+            else { ctx.save(); ctx.translate(cx + SHOP_CARD_W / 2, cy + 28); ctx.scale(1.6, 1.6); sprBird(0, 0, 0, item.pal); ctx.restore(); }
           } else if (item.type === 'trail' && item.trail === 'rainbow') {
             drawIconRainbow(cx + SHOP_CARD_W / 2, cy + 28);
           } else if (item.type === 'trail' && item.trail === 'cloud') {
             drawIconCloud(cx + SHOP_CARD_W / 2, cy + 28);
+          } else if (item.type === 'trail' && item.trail === 'miasma') {
+            drawIconMiasma(cx + SHOP_CARD_W / 2, cy + 28);
           } else if (item.type === 'jump' && item.jump === 'ring') {
             drawIconJumpRing(cx + SHOP_CARD_W / 2, cy + 28);
           } else if (item.type === 'jump' && item.jump === 'fart') {
@@ -1111,7 +1172,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.17.3', W/2, H - 14);
+      ctx.fillText('v0.18.0', W/2, H - 14);
     }
   }
 

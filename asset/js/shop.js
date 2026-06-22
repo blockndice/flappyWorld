@@ -8,20 +8,23 @@ const SHOP_ITEMS = [
   { id: 'skin_bleu',     name: 'Bleu',     price: 20,  type: 'skin',  pal: 4,           lock: false, buy: false, equip: false },
   { id: 'skin_violet',   name: 'Violet',   price: 20,  type: 'skin',  pal: 5,           lock: false, buy: false, equip: false },
   { id: 'skin_orange',   name: 'Orange',   price: 25,  type: 'skin',  pal: 6,           lock: false, buy: false, equip: false },
-  { id: 'skin_corail',   name: 'Corail',   price: 25,  type: 'skin',  pal: 7,           lock: false, buy: false, equip: false },
+  { id: 'skin_multicolor', name: 'Multicolor', price: 80, type: 'skin', pal: 99,          lock: false, buy: false, equip: false },
+  { id: 'trick_looping',  name: 'Looping',  price: 100, type: 'trick',   trick: 'looping',  lock: false, buy: false, equip: false },
   { id: 'trail_rainbow', name: 'Arc-ciel', price: 400, type: 'trail',   trail: 'rainbow', lock: false, buy: false, equip: false },
   { id: 'trail_cloud',   name: 'Nuage',    price: 30,  type: 'trail',   trail: 'cloud',   lock: false, buy: false, equip: false },
-  { id: 'jump_ring',     name: 'Anneau',   price: 35,  type: 'jump',    jump:  'ring',    lock: false, buy: false, equip: false },
-  { id: 'trick_looping',  name: 'Looping',  price: 100, type: 'trick',   trick: 'looping',  lock: false, buy: false, equip: false },
   { id: 'trick_firework', name: 'Firework', price: 80,  type: 'jump',    jump:  'firework', lock: false, buy: false, equip: false },
+  { id: 'jump_ring',     name: 'Anneau',   price: 35,  type: 'jump',    jump:  'ring',    lock: false, buy: false, equip: false },
+  { id: 'skin_vert',     name: 'Vert',     price: 10,  type: 'skin',  pal: 1,           lock: false, buy: false, equip: false },
   { id: 'jump_fart',    name: 'Fart',     price: 30,  type: 'jump',    jump:  'fart',    lock: false, buy: false, equip: false },
   { id: 'sndJump_pet',    name: 'Pet',      price: 20,  type: 'sndJump', snd:   'jumpPet',   lock: false, buy: false, equip: false },
+  { id: 'trail_miasma',  name: 'Miasma',   price: 45,  type: 'trail',   trail: 'miasma',  lock: false, buy: false, equip: false },
 ];
 
 // ─────────────────────────────────────────────
 //  ÉTAT ACTIF DU JOUEUR
 // ─────────────────────────────────────────────
-let playerPal    = 0;    // palette équipée (0 = jaune défaut)
+let playerPal    = 0;    // palette équipée (0 = jaune défaut, 99 = multicolor)
+let _multicolorPal = 1; // palette courante du skin multicolor (1-7)
 let activeTrail  = null; // 'rainbow' | 'cloud' | null
 let activeJump   = null; // 'ring' | 'fart' | null
 let activeJumpSnd = null; // 'jumpPet' | null
@@ -49,8 +52,13 @@ function clearPreview() {
 }
 
 function getPreviewPal() {
-  if (previewedItem && previewedItem.type === 'skin') return previewedItem.pal;
-  return playerPal;
+  const pal = (previewedItem && previewedItem.type === 'skin') ? previewedItem.pal : playerPal;
+  return pal === 99 ? _multicolorPal : pal;
+}
+
+function advanceMulticolor() {
+  if (playerPal !== 99 && !(previewedItem && previewedItem.pal === 99)) return;
+  _multicolorPal = (_multicolorPal % 7) + 1;
 }
 
 function _activeTrail() {
@@ -88,27 +96,67 @@ let _trailFrame      = 0;
 let _trailColorIndex = 0;
 
 function trailTick(bx, by) {
-  if (!_activeTrail()) { _trailFrame = 0; return; }
+  if (!_activeTrail()) { _trailFrame = 0; trailParticles.length = 0; return; }
 
-  // déplace tous les carrés vers la gauche uniquement
-  for (const p of trailParticles) { p.x -= 2; }
+  const trail = _activeTrail();
 
-  // crée 1 carré toutes les 2 frames
+  // mise à jour des particules existantes
+  for (let i = trailParticles.length - 1; i >= 0; i--) {
+    const p = trailParticles[i];
+    p.x -= 2;
+    if (p.kind === 'miasma') {
+      p.y  -= p.vy;
+      p.life++;
+      p.r   = 2 + (p.life / p.maxLife) * 3;
+      if (p.life >= p.maxLife) trailParticles.splice(i, 1);
+    }
+  }
+
+  // spawn
   _trailFrame++;
-  if (_trailFrame % TRAIL_EVERY === 0) {
-    if (trailParticles.length >= 20) trailParticles.shift();
-    const color = _activeTrail() === 'rainbow'
-      ? `hsl(${(_trailColorIndex * 36) % 360},100%,65%)`
-      : 'rgba(255,255,255,0.85)';
-    trailParticles.push({ x: bx, y: by, color });
-    _trailColorIndex++;
+  const every = trail === 'miasma' ? 5 : TRAIL_EVERY;
+  if (_trailFrame % every === 0) {
+    if (trail === 'miasma') {
+      trailParticles.push({
+        kind: 'miasma',
+        x: bx - 8,
+        y: by + 6,
+        vy: 0.35 + Math.random() * 0.35,
+        life: 0,
+        maxLife: 38 + Math.floor(Math.random() * 18),
+        r: 2,
+        hue: 85 + Math.floor(Math.random() * 35),
+      });
+    } else {
+      if (trailParticles.length >= 20) trailParticles.shift();
+      const color = trail === 'rainbow'
+        ? `hsl(${(_trailColorIndex * 36) % 360},100%,65%)`
+        : 'rgba(255,255,255,0.85)';
+      trailParticles.push({ kind: 'default', x: bx, y: by, color });
+      _trailColorIndex++;
+    }
   }
 }
 
 function trailDraw() {
   for (const p of trailParticles) {
-    ctx.fillStyle = p.color;
-    ctx.fillRect(Math.round(p.x) - TRAIL_PX / 2, Math.round(p.y) - TRAIL_PX / 2, TRAIL_PX, TRAIL_PX);
+    if (p.kind === 'miasma') {
+      const alpha = (1 - p.life / p.maxLife) * 0.8;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = `hsl(${p.hue},65%,52%)`;
+      ctx.beginPath();
+      ctx.arc(Math.round(p.x), Math.round(p.y), p.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath();
+      ctx.arc(Math.round(p.x) - p.r * 0.3, Math.round(p.y) - p.r * 0.35, p.r * 0.32, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.fillRect(Math.round(p.x) - TRAIL_PX / 2, Math.round(p.y) - TRAIL_PX / 2, TRAIL_PX, TRAIL_PX);
+    }
   }
 }
 
@@ -117,38 +165,99 @@ function trailDraw() {
 // ─────────────────────────────────────────────
 const jumpEffects = [];
 
-function jumpSpawn(bx, by) {
+function jumpSpawn(bx, by, scale = 1, impact = false, driftAngle = 0) {
   if (!_activeJump()) return;
   const type = _activeJump();
+  if (impact) {
+    const driftSpd = 0.55;
+    const driftX   = Math.cos(driftAngle) * driftSpd;
+    const driftY   = Math.sin(driftAngle) * driftSpd;
+    const maxLife  = 22;
+    if (type === 'fart') {
+      const particles = Array.from({ length: 10 }, () => {
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.random() * 0.3 + 0.15;
+        return { dx: Math.cos(a) * r, dy: Math.sin(a) * r };
+      });
+      jumpEffects.push({ x: bx, y: by, jump: type, frame: 0, maxLife, scale, impact: true, driftX, driftY, particles });
+    } else if (type === 'firework') {
+      const count = 14;
+      const particles = Array.from({ length: count }, (_, i) => {
+        const a = (i / count) * Math.PI * 2;
+        const s = 0.25 + Math.random() * 0.15;
+        return { dx: Math.cos(a) * s, dy: Math.sin(a) * s, color: `hsl(${i * (360 / count)},100%,65%)` };
+      });
+      jumpEffects.push({ x: bx, y: by, jump: type, frame: 0, maxLife, scale, impact: true, driftX, driftY, particles });
+    } else {
+      jumpEffects.push({ x: bx, y: by, jump: type, frame: 0, maxLife, scale, impact: true, driftX, driftY });
+    }
+    return;
+  }
   if (type === 'fart') {
     const particles = Array.from({ length: 7 }, () => ({
       dx: (Math.random() - 0.5) * 2.5,
       dy: Math.random() * 2 + 0.5,
     }));
-    jumpEffects.push({ x: bx, y: by + 6, jump: type, frame: 0, particles });
+    jumpEffects.push({ x: bx, y: by + 6, jump: type, frame: 0, scale, particles });
   } else if (type === 'firework') {
     const particles = Array.from({ length: 12 }, (_, i) => {
       const a = (i / 12) * Math.PI * 2;
       const spd = 1.5 + Math.random() * 2;
       return { dx: Math.cos(a) * spd, dy: Math.sin(a) * spd, color: `hsl(${i * 30},100%,65%)` };
     });
-    jumpEffects.push({ x: bx, y: by, jump: type, frame: 0, maxLife: 25, particles });
+    jumpEffects.push({ x: bx, y: by, jump: type, frame: 0, maxLife: 25, scale, particles });
   } else {
-    jumpEffects.push({ x: bx, y: by + 6, jump: type, frame: 0 });
+    jumpEffects.push({ x: bx, y: by + 6, jump: type, frame: 0, scale });
   }
 }
 
 function jumpTick() {
   for (let i = jumpEffects.length - 1; i >= 0; i--) {
-    jumpEffects[i].x -= 2;
-    jumpEffects[i].frame++;
-    if (jumpEffects[i].frame > (jumpEffects[i].maxLife ?? 22)) jumpEffects.splice(i, 1);
+    const e = jumpEffects[i];
+    if (e.impact) { e.x += e.driftX; e.y += e.driftY; }
+    else          { e.x -= 2; }
+    e.frame++;
+    if (e.frame > (e.maxLife ?? 22)) jumpEffects.splice(i, 1);
   }
 }
 
 function jumpDraw() {
   for (const e of jumpEffects) {
+    const sc = e.scale ?? 1;
     ctx.save();
+    if (e.impact) {
+      const t         = e.frame / e.maxLife;
+      const alpha     = Math.max(0, 1 - t);
+      const growScale = (0.2 + t * 1.8) * sc;
+      ctx.globalAlpha = alpha;
+      ctx.translate(e.x, e.y);
+      ctx.scale(growScale, growScale);
+      if (e.jump === 'fart') {
+        for (const p of e.particles) {
+          const px = p.dx * e.frame * 4;
+          const py = p.dy * e.frame * 4;
+          ctx.fillStyle = '#aaee22';
+          const s = Math.max(0.5, 3.5 * (1 - t * 0.7));
+          ctx.beginPath(); ctx.arc(px, py, s, 0, Math.PI * 2); ctx.fill();
+        }
+      } else if (e.jump === 'firework') {
+        for (const p of e.particles) {
+          const px = p.dx * e.frame * 5;
+          const py = p.dy * e.frame * 5;
+          ctx.fillStyle = p.color;
+          const s = Math.max(0.5, 3 * (1 - t * 0.6));
+          ctx.beginPath(); ctx.arc(px, py, s, 0, Math.PI * 2); ctx.fill();
+        }
+      } else {
+        const r = t * 12;
+        ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+        ctx.lineWidth   = 1.5;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      ctx.restore();
+      continue;
+    }
     if (e.jump === 'fart') {
       const t = e.frame / 22;
       for (const p of e.particles) {
@@ -156,7 +265,7 @@ function jumpDraw() {
         const py = e.y + p.dy * e.frame;
         ctx.globalAlpha = Math.max(0, 1 - t);
         ctx.fillStyle = '#aaee22';
-        const s = Math.max(1, 3.5 - t * 3);
+        const s = Math.max(1, (3.5 - t * 3) * sc);
         ctx.beginPath();
         ctx.arc(px, py, s, 0, Math.PI * 2);
         ctx.fill();
@@ -168,7 +277,7 @@ function jumpDraw() {
         const px = e.x + p.dx * e.frame;
         const py = e.y + p.dy * e.frame + 0.05 * e.frame * e.frame;
         ctx.fillStyle = p.color;
-        const s = Math.max(1, 3 - t * 2);
+        const s = Math.max(1, (3 - t * 2) * sc);
         ctx.beginPath();
         ctx.arc(px, py, s, 0, Math.PI * 2);
         ctx.fill();
@@ -176,9 +285,9 @@ function jumpDraw() {
     } else {
       const t = e.frame / 18;
       const a = 1 - t;
-      const r = t * 14;
+      const r = t * 14 * sc;
       ctx.strokeStyle = `rgba(255,255,255,${a})`;
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 1.5 * sc;
       ctx.beginPath();
       ctx.arc(e.x, e.y, r, 0, Math.PI * 2);
       ctx.stroke();
