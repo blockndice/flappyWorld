@@ -1110,7 +1110,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.17.1', W/2, H - 14);
+      ctx.fillText('v0.17.2', W/2, H - 14);
     }
   }
 
@@ -1307,22 +1307,38 @@ function render() {
 
 const volWrap = document.getElementById('volWrap');
 
-function loop() {
-  coinTick++;
-  volWrap.style.display = (state === 'intro1' && intro1Page !== 4) ? 'block' : 'none';
-  if (state === 'intro1') ensureIntroMusic();
-  if (state !== 'dead' && state !== 'score') {
-    for (const c of bgClouds) {
-      c.x -= 0.18;
-      if (c.x < -80) {
-        c.x     = W + 20 + Math.random() * 100;
-        c.y     = CLOUD_Y_MIN + Math.random() * (CLOUD_Y_MAX - CLOUD_Y_MIN);
-        c.s     = 4  + Math.floor(Math.random() * 5);
-        c.shape = CLOUD_SHAPES[Math.floor(Math.random() * CLOUD_SHAPES.length)];
+// ── Boucle à pas fixe 60fps ──────────────────────────────────────────────────
+// La physique avance toujours par tranches de 1/60s (STEP) quelle que soit
+// la cadence de l'écran (60/120/144Hz) ou la puissance du PC.
+const STEP = 1000 / 60;
+let _lt = 0, _accum = 0;
+
+function loop(ts) {
+  // ── pas fixes (physique / logique) ──
+  if (_lt) {
+    _accum += Math.min(ts - _lt, 50); // cap 50ms pour éviter la spirale infernale
+    while (_accum >= STEP) {
+      coinTick++;
+      if (state !== 'dead' && state !== 'score') {
+        for (const c of bgClouds) {
+          c.x -= 0.18;
+          if (c.x < -80) {
+            c.x     = W + 20 + Math.random() * 100;
+            c.y     = CLOUD_Y_MIN + Math.random() * (CLOUD_Y_MAX - CLOUD_Y_MIN);
+            c.s     = 4  + Math.floor(Math.random() * 5);
+            c.shape = CLOUD_SHAPES[Math.floor(Math.random() * CLOUD_SHAPES.length)];
+          }
+        }
       }
+      update();
+      _accum -= STEP;
     }
   }
-  update();
+  _lt = ts;
+
+  // ── chaque frame (UI + rendu) ──
+  volWrap.style.display = (state === 'intro1' && intro1Page !== 4) ? 'block' : 'none';
+  if (state === 'intro1') ensureIntroMusic();
   render();
   requestAnimationFrame(loop);
 }

@@ -43,6 +43,7 @@ v0.16.3 = Shop preview sound jump
 v0.16.4 = Shop Equip new item buy + bannière du jeu
 v0.17.0 = Physique de l'oiseau améliorer
 v0.17.1 = amélioration ecran titre
+v0.17.2 = vitesse de jeu uniforme sur tous les écrans et support
 
 ** next step **
 Shop -> 1 page = 1 theme
@@ -79,4 +80,25 @@ conseils de réglage :
 float trop long     → baisser FLOAT_FRAMES   (ex: 10)
 vol trop léger      → monter  FLOAT_GRAVITY   (ex: 0.18)
 saut trop puissant  → remonter FLAP_VY        (ex: -7.3)
+────────────────────────────────────────────────────────────────────────────
+
+boucle à pas fixe (v0.17.2)
+────────────────────────────────────────────────────────────────────────────
+  problème : requestAnimationFrame cadencé sur le Hz écran
+             → 120Hz = jeu 2× plus rapide qu'un 60Hz
+
+  solution : accumulateur à pas fixe (STEP = 1000/60 = 16.67ms)
+             la physique avance toujours 60 fois/seconde réel
+             le rendu suit la cadence native (plus fluide sur 120Hz+)
+
+  dans le pas fixe (60/s)  │ dans render() (cadence native)
+  ─────────────────────────┼──────────────────────────────
+  physique oiseau           │ dessin pur
+  tuyaux (spawn + move)     │ shake mort (cosmétique)
+  sol, nuages               │ UI HTML (volWrap)
+  tous les compteurs        │
+  particules                │
+  coinTick                  │
+
+  garde-fou : cap 50ms → pas de saut si l'onglet reprend du focus
 ────────────────────────────────────────────────────────────────────────────
