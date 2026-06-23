@@ -49,6 +49,7 @@ v0.18.0 = article trail Miasma + article skin multicolor + grosse animation jump
 v0.19.0 = article skin Phosphor (animation couleur fluide) + article skin Multicolor (transition fluide entre couleurs) + article trick Toupie (flip vertical + planeur au maintien) + icônes card animées phosphor & multicolor + tricks pirouette & toupie déclenchés tous les 3 sauts
 v0.19.1 = [HOTFIX] chargement bloqué si un son n'émet ni canplaythrough ni error (timeout secours 5s)
 v0.19.2 = Doc technique 
+v0.19.3 = amélioration et traduction documention
 
 ** next step **
 idée de level DA

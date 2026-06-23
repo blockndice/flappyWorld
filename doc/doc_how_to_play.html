@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<title>Flappy World — Comment jouer</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-16 -14 36 30'%3E%3Cg transform='rotate(-20)'%3E%3Crect x='-13' y='-11' width='26' height='22' fill='%23f5d600'/%3E%3Crect x='-9' y='3' width='16' height='6' fill='%23fff3a0'/%3E%3Crect x='-13' y='0' width='10' height='7' fill='%23d4a800'/%3E%3Crect x='3' y='-8' width='9' height='9' fill='%23fff'/%3E%3Crect x='7' y='-5' width='4' height='4' fill='%23111'/%3E%3Crect x='11' y='-3' width='9' height='5' fill='%23ff8800'/%3E%3Crect x='11' y='1' width='9' height='2' fill='%23cc6600'/%3E%3C/g%3E%3C/svg%3E"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 11pt; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1a1a2e; background: #fff; line-height: 1.55; }
+
+  :root {
+    --accent:  #ffe033;
+    --dark:    #1a1a2e;
+    --mid:     #2c3e6b;
+    --light:   #e8edf8;
+    --border:  #ccd3e8;
+    --green:   #2e7d32;
+    --red:     #b71c1c;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto 12mm;
+    padding: 18mm 18mm 14mm;
+    background: #fff;
+    position: relative;
+  }
+
+  /* ── Couverture ── */
+  .cover {
+    background: #3a8fd4;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    overflow: hidden;
+  }
+  .cover-birds-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  .cover-tag {
+    font-size: 11pt;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 10mm;
+  }
+  .cover h1 { font-size: 36pt; font-weight: 900; color: var(--accent); text-shadow: 2px 3px 0 rgba(0,0,0,0.4); line-height: 1.1; margin-bottom: 4mm; }
+  .cover h2 { font-size: 16pt; font-weight: 400; color: rgba(255,255,255,0.85); margin-bottom: 16mm; }
+  .cover-divider { width: 40mm; height: 2px; background: var(--accent); margin-bottom: 10mm; }
+  .cover-meta { font-size: 9pt; color: rgba(255,255,255,0.7); line-height: 2.1; }
+  .cover-meta strong { color: #fff; }
+  .cover-version { position: absolute; bottom: 14mm; right: 18mm; font-size: 8pt; color: rgba(255,255,255,0.35); letter-spacing: 1px; }
+
+  /* ── Entête de section ── */
+  .section-header {
+    background: var(--dark);
+    color: #fff;
+    padding: 3mm 5mm;
+    border-radius: 5px;
+    margin-bottom: 6mm;
+    display: flex;
+    align-items: center;
+    gap: 3mm;
+  }
+  .section-header .num {
+    background: var(--accent);
+    color: var(--dark);
+    font-weight: 900;
+    font-size: 13pt;
+    width: 8mm; height: 8mm;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .section-header h2 { font-size: 13pt; font-weight: 700; margin: 0; }
+
+  h3 {
+    font-size: 13pt;
+    font-weight: 800;
+    color: var(--mid);
+    border-left: 4px solid var(--accent);
+    padding-left: 4mm;
+    margin: 7mm 0 3.5mm;
+  }
+  h4 { font-size: 10.5pt; font-weight: 700; color: var(--dark); margin: 4mm 0 2mm; }
+
+  p { margin-bottom: 2.5mm; font-size: 10pt; }
+  ul, ol { margin: 2mm 0 3.5mm 5mm; font-size: 10pt; }
+  li { margin-bottom: 1.5mm; }
+
+  code {
+    font-family: 'Menlo', 'Courier New', monospace;
+    font-size: 8.5pt;
+    background: #f4f6fc;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.5px 3px;
+  }
+
+  .note {
+    background: #fffbe6;
+    border-left: 3px solid #f5d600;
+    padding: 2.5mm 3.5mm;
+    margin: 2mm 0 4mm;
+    font-size: 9pt;
+    border-radius: 0 4px 4px 0;
+  }
+  .tip {
+    background: #e8f5e9;
+    border-left: 3px solid #43a047;
+    padding: 2.5mm 3.5mm;
+    margin: 2mm 0 4mm;
+    font-size: 9pt;
+    border-radius: 0 4px 4px 0;
+  }
+  .warn {
+    background: #fdecea;
+    border-left: 3px solid #e53935;
+    padding: 2.5mm 3.5mm;
+    margin: 2mm 0 4mm;
+    font-size: 9pt;
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* ── Contrôles ── */
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 3mm;
+    margin: 3mm 0 5mm;
+  }
+  .ctrl-card {
+    background: var(--light);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 4mm;
+    text-align: center;
+  }
+  .ctrl-icon {
+    font-size: 22pt;
+    margin-bottom: 2mm;
+    display: block;
+  }
+  .ctrl-device {
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: var(--mid);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1mm;
+  }
+  .ctrl-action {
+    font-size: 9pt;
+    color: #444;
+  }
+  .ctrl-key {
+    display: inline-block;
+    background: var(--dark);
+    color: #fff;
+    font-family: 'Menlo', monospace;
+    font-size: 11pt;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin: 1px 1px;
+  }
+
+  /* ── Écrans ── */
+  .screen-flow {
+    display: flex;
+    align-items: center;
+    gap: 2mm;
+    margin: 3mm 0 5mm;
+    flex-wrap: wrap;
+  }
+  .screen-box {
+    background: var(--dark);
+    color: var(--accent);
+    font-family: 'Menlo', monospace;
+    font-size: 8.5pt;
+    font-weight: 700;
+    padding: 2mm 4mm;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .screen-arrow {
+    color: var(--mid);
+    font-size: 12pt;
+    font-weight: 700;
+  }
+  .screen-label {
+    font-size: 11pt;
+    color: #666;
+    white-space: nowrap;
+  }
+
+  /* ── Tableau scores ── */
+  table { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 2mm 0 4mm; }
+  th { background: var(--dark); color: #fff; padding: 2mm 3mm; text-align: left; font-size: 8.5pt; }
+  td { padding: 2mm 3mm; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: var(--light); }
+
+  /* ── Shop preview ── */
+  .shop-types {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3mm;
+    margin: 3mm 0 5mm;
+  }
+  .shop-type-card {
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    padding: 3.5mm 4mm;
+  }
+  .shop-type-card .type-name {
+    font-weight: 800;
+    font-size: 10.5pt;
+    color: var(--mid);
+    margin-bottom: 1.5mm;
+  }
+  .shop-type-card p { font-size: 9pt; margin: 0; color: #444; }
+  .shop-type-card .examples {
+    font-size: 11pt;
+    color: #888;
+    margin-top: 1mm;
+  }
+
+  /* ── Astuces ── */
+  .tips-list {
+    counter-reset: tips;
+    list-style: none;
+    margin: 2mm 0 4mm;
+  }
+  .tips-list li {
+    counter-increment: tips;
+    display: flex;
+    gap: 3mm;
+    align-items: flex-start;
+    margin-bottom: 3mm;
+    font-size: 10pt;
+  }
+  .tips-list li::before {
+    content: counter(tips);
+    background: var(--accent);
+    color: var(--dark);
+    font-weight: 900;
+    font-size: 9pt;
+    min-width: 6mm;
+    height: 6mm;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 0.3mm;
+  }
+
+  /* ── Sommaire ── */
+  .toc-title {
+    font-size: 20pt;
+    font-weight: 900;
+    color: var(--dark);
+    margin-bottom: 8mm;
+    padding-bottom: 3mm;
+    border-bottom: 3px solid var(--accent);
+  }
+  .toc-list {
+    list-style: none;
+    margin: 0; padding: 0;
+  }
+  .toc-list li {
+    display: flex;
+    align-items: center;
+    gap: 3mm;
+    padding: 4mm 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12pt;
+  }
+  .toc-list li:last-child { border-bottom: none; }
+  .toc-num {
+    background: var(--dark);
+    color: var(--accent);
+    font-weight: 900;
+    font-size: 10pt;
+    width: 7mm; height: 7mm;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .toc-label { font-weight: 700; color: var(--dark); flex: 1; }
+  .toc-page {
+    font-size: 9pt;
+    color: #888;
+    white-space: nowrap;
+  }
+  .toc-page strong { color: var(--mid); font-size: 11pt; }
+
+  /* ── Sélecteur de langue ── */
+  .lang-switcher {
+    position: fixed;
+    bottom: 10mm;
+    right: 10mm;
+    display: flex;
+    gap: 2mm;
+    z-index: 200;
+  }
+  .lang-btn {
+    width: 11mm; height: 11mm;
+    border-radius: 3px;
+    border: 2.5px solid transparent;
+    display: block;
+    cursor: pointer;
+    background: none;
+    padding: 0;
+    overflow: hidden;
+    transition: opacity 0.2s, border-color 0.2s;
+  }
+  .lang-btn svg { display: block; width: 100%; height: 100%; }
+  .lang-active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1.5px var(--dark);
+  }
+  .lang-soon {
+    opacity: 0.5;
+    filter: grayscale(30%);
+  }
+
+  /* ── Numéro de page ── */
+  body { counter-reset: pagenum 1; }
+  .page:not(.cover) { counter-increment: pagenum; }
+  .page:not(.cover)::after {
+    content: counter(pagenum);
+    position: absolute;
+    bottom: 6mm;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11pt;
+    color: #aaa;
+    letter-spacing: 1px;
+  }
+
+  /* ── Impression ── */
+  @media print {
+    body { background: #fff; }
+    .page {
+      width: 100%; margin: 0;
+      padding: 14mm 16mm 12mm;
+      page-break-after: always;
+      min-height: auto;
+      box-shadow: none;
+    }
+    .page:last-child { page-break-after: avoid; }
+    @page { size: A4; margin: 0; }
+  }
+  @media screen {
+    body { background: #eaeef6; padding: 10mm 0; }
+    .page { box-shadow: 0 2px 16px rgba(0,0,0,0.12); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     PAGE 1 — COUVERTURE
+══════════════════════════════════ -->
+<div class="page cover">
+  <!-- Oiseaux pixel-art — viewBox = A4 en mm (210×297) -->
+  <svg class="cover-birds-svg" viewBox="0 0 210 297" xmlns="http://www.w3.org/2000/svg">
+    <!-- Jaune — grand, bas gauche -->
+    <g transform="translate(42,238) rotate(-8) scale(2.3)">
+      <rect x="-13" y="-11" width="26" height="22" fill="#f5d600"/>
+      <rect x="-9" y="3" width="16" height="6" fill="#fff3a0"/>
+      <rect x="-13" y="0" width="10" height="7" fill="#d4a800"/>
+      <rect x="3" y="-8" width="9" height="9" fill="#fff"/>
+      <rect x="7" y="-5" width="4" height="4" fill="#111"/>
+      <rect x="11" y="-3" width="9" height="5" fill="#ff8800"/>
+      <rect x="11" y="1" width="9" height="2" fill="#cc6600"/>
+    </g>
+    <!-- Rose — petit, haut gauche -->
+    <g transform="translate(28,46) rotate(-17) scale(1.2)">
+      <rect x="-13" y="-11" width="26" height="22" fill="#e91e63"/>
+      <rect x="-9" y="3" width="16" height="6" fill="#f8bbd0"/>
+      <rect x="-13" y="0" width="10" height="7" fill="#880e4f"/>
+      <rect x="3" y="-8" width="9" height="9" fill="#fff"/>
+      <rect x="7" y="-5" width="4" height="4" fill="#111"/>
+      <rect x="11" y="-3" width="9" height="5" fill="#ff8800"/>
+      <rect x="11" y="1" width="9" height="2" fill="#cc6600"/>
+    </g>
+    <!-- Rouge — moyen, haut droit -->
+    <g transform="translate(182,30) rotate(-11) scale(1.4)">
+      <rect x="-13" y="-11" width="26" height="22" fill="#f44336"/>
+      <rect x="-9" y="3" width="16" height="6" fill="#ffcdd2"/>
+      <rect x="-13" y="0" width="10" height="7" fill="#b71c1c"/>
+      <rect x="3" y="-8" width="9" height="9" fill="#fff"/>
+      <rect x="7" y="-5" width="4" height="4" fill="#111"/>
+      <rect x="11" y="-3" width="9" height="5" fill="#ff8800"/>
+      <rect x="11" y="1" width="9" height="2" fill="#cc6600"/>
+    </g>
+    <!-- Vert — moyen, bas droit -->
+    <g transform="translate(168,253) rotate(9) scale(1.3)">
+      <rect x="-13" y="-11" width="26" height="22" fill="#4caf50"/>
+      <rect x="-9" y="3" width="16" height="6" fill="#a5d6a7"/>
+      <rect x="-13" y="0" width="10" height="7" fill="#2e7d32"/>
+      <rect x="3" y="-8" width="9" height="9" fill="#fff"/>
+      <rect x="7" y="-5" width="4" height="4" fill="#111"/>
+      <rect x="11" y="-3" width="9" height="5" fill="#ff8800"/>
+      <rect x="11" y="1" width="9" height="2" fill="#cc6600"/>
+    </g>
+    <!-- Bleu — petit, centre droit -->
+    <g transform="translate(188,158) rotate(-14) scale(1.0)">
+      <rect x="-13" y="-11" width="26" height="22" fill="#2196f3"/>
+      <rect x="-9" y="3" width="16" height="6" fill="#bbdefb"/>
+      <rect x="-13" y="0" width="10" height="7" fill="#0d47a1"/>
+      <rect x="3" y="-8" width="9" height="9" fill="#fff"/>
+      <rect x="7" y="-5" width="4" height="4" fill="#111"/>
+      <rect x="11" y="-3" width="9" height="5" fill="#ff8800"/>
+      <rect x="11" y="1" width="9" height="2" fill="#cc6600"/>
+    </g>
+    <!-- Orange — très petit, haut centre -->
+    <g transform="translate(100,68) rotate(-9) scale(0.9)">
+      <rect x="-13" y="-11" width="26" height="22" fill="#ff8c00"/>
+      <rect x="-9" y="3" width="16" height="6" fill="#ffe0b2"/>
+      <rect x="-13" y="0" width="10" height="7" fill="#e65100"/>
+      <rect x="3" y="-8" width="9" height="9" fill="#fff"/>
+      <rect x="7" y="-5" width="4" height="4" fill="#111"/>
+      <rect x="11" y="-3" width="9" height="5" fill="#ff8800"/>
+      <rect x="11" y="1" width="9" height="2" fill="#cc6600"/>
+    </g>
+  </svg>
+  <div class="cover-tag" data-i18n="cover.tag">Guide du joueur</div>
+  <h1>Flappy World</h1>
+  <h2 data-i18n="cover.h2">Comment jouer</h2>
+  <div class="cover-divider"></div>
+  <div class="cover-meta" data-i18n-html="cover.meta"><strong>Genre</strong> Arcade / Réflexes<br><strong>Plateforme</strong> Navigateur web (desktop, mobile, tablette)<br><strong>Objectif</strong> Passer le plus de tuyaux possible sans toucher les obstacles<br><strong>Version</strong> v0.19.3</div>
+  <div class="cover-version">v0.19.3</div>
+</div>
+
+
+<!-- ══════════════════════════════════
+     PAGE 2 — SOMMAIRE
+══════════════════════════════════ -->
+<div class="page">
+  <div class="toc-title" data-i18n="toc.title">Sommaire</div>
+  <ul class="toc-list">
+    <li><span class="toc-num">1</span><span class="toc-label" data-i18n="toc.1">But du jeu</span><span class="toc-page">page <strong>3</strong></span></li>
+    <li><span class="toc-num">2</span><span class="toc-label" data-i18n="toc.2">Free Run &amp; Adventure</span><span class="toc-page">page <strong>4</strong></span></li>
+    <li><span class="toc-num">3</span><span class="toc-label" data-i18n="toc.3">Contrôles</span><span class="toc-page">page <strong>5</strong></span></li>
+    <li><span class="toc-num">4</span><span class="toc-label" data-i18n="toc.4">Shop &amp; Personnalisation</span><span class="toc-page">page <strong>6</strong></span></li>
+    <li><span class="toc-num">5</span><span class="toc-label" data-i18n="toc.5">Astuces pour progresser</span><span class="toc-page">page <strong>7</strong></span></li>
+  </ul>
+</div>
+
+
+<!-- ══════════════════════════════════
+     PAGE 3 — BUT DU JEU
+══════════════════════════════════ -->
+<div class="page">
+  <div class="section-header"><div class="num">1</div><h2 data-i18n="s1.h2">But du jeu</h2></div>
+
+  <h3 data-i18n="s1.h3.obj">L'objectif</h3>
+  <p data-i18n-html="s1.p1">Tu contrôles un oiseau pixel-art qui vole en continu vers la droite. Des tuyaux verts apparaissent régulièrement avec une ouverture au milieu. Ton unique but est de <strong>faire passer l'oiseau dans l'ouverture</strong> sans toucher les tuyaux, le sol ou le plafond.</p>
+  <p data-i18n-html="s1.p2">Chaque tuyau traversé avec succès rapporte <strong>1 pièce</strong>. Les pièces s'accumulent et servent à acheter des articles dans le Shop. Il n'y a pas de fin — la partie continue jusqu'à la première collision.</p>
+
+  <div class="tip" data-i18n-html="s1.tip"><strong>Record personnel :</strong> si ton score dépasse ton meilleur score précédent, la mention <em>record</em> s'affiche en jaune sous le compteur pendant la partie. La pièce collectée émet aussi un son différent pour signaler le dépassement.</div>
+
+  <h3 data-i18n="s1.h3.end">Ce qui met fin à la partie</h3>
+  <ul data-i18n-html="s1.end.list"><li>Toucher un tuyau (haut ou bas)</li><li>Toucher le sol</li><li>Toucher le plafond</li></ul>
+  <p data-i18n-html="s1.p.collision">À la collision, l'oiseau est projeté hors de l'écran avec une animation d'impact, puis le tableau des scores s'affiche.</p>
+
+  <h3 data-i18n="s1.h3.flow">Déroulement d'une session</h3>
+  <div class="screen-flow">
+    <div class="screen-box" data-i18n="flow.title">Écran titre</div><div class="screen-arrow">→</div>
+    <div class="screen-label" data-i18n="flow.click">clic</div><div class="screen-arrow">→</div>
+    <div class="screen-box">Menu</div><div class="screen-arrow">→</div>
+    <div class="screen-label" data-i18n="flow.freerun">Free Run</div><div class="screen-arrow">→</div>
+    <div class="screen-box" data-i18n="flow.cinematic">Cinématique</div><div class="screen-arrow">→</div>
+    <div class="screen-box" data-i18n="flow.countdown">Décompte</div><div class="screen-arrow">→</div>
+    <div class="screen-box" data-i18n="flow.game">Partie</div><div class="screen-arrow">→</div>
+    <div class="screen-box" data-i18n="flow.results">Résultats</div>
+  </div>
+
+  <h3 data-i18n="s1.h3.score">Le score et le leaderboard</h3>
+  <p data-i18n-html="s1.p.score">Ton score est le nombre de pièces collectées dans la partie. À la fin, il est automatiquement inséré dans le <strong>TOP 10 local</strong> (sauvegardé dans le navigateur).</p>
+  <table data-i18n-html="s1.table.score">
+    <tr><th>Écran résultats — Page</th><th>Contenu</th><th>Action pour avancer</th></tr>
+    <tr><td>Page 1 — Game Over</td><td>Score de la partie + rang dans le TOP 10</td><td>Clic / Espace / Toucher</td></tr>
+    <tr><td>Page 2 — TOP 10</td><td>Les 10 meilleurs scores enregistrés</td><td>Clic / Espace / Toucher</td></tr>
+    <tr><td>Page 3 — Try Again ?</td><td>Choix Rejouer ou Retour au menu</td><td>Bouton <strong>Yes</strong> ou <strong>No</strong></td></tr>
+  </table>
+</div>
+
+
+<!-- ══════════════════════════════════
+     PAGE 4 — FREE RUN & ADVENTURE
+══════════════════════════════════ -->
+<div class="page">
+  <div class="section-header"><div class="num">2</div><h2 data-i18n="s2.h2">Free Run &amp; Adventure</h2></div>
+
+  <h3 data-i18n="s2.h3.freerun">Free Run — S'entraîner librement</h3>
+  <p data-i18n-html="s2.p.freerun">Le mode <strong>Free Run</strong> est le mode de jeu actuel et le cœur de l'expérience. Il n'y a pas d'enjeu autre que de battre son propre record — c'est l'endroit pour apprendre, progresser, et prendre plaisir à maîtriser le saut.</p>
+  <ul data-i18n-html="s2.freerun.list"><li>Tester les articles achetés dans le Shop (skins, trails, tricks, effets)</li><li>Découvrir et maîtriser les tricks Toupie et Pirouette</li><li>Accumuler des pièces pour débloquer de nouveaux articles</li><li>Grimper dans le TOP 10 local et améliorer son record personnel</li></ul>
+  <div class="tip" data-i18n-html="s2.freerun.tip"><strong>Free Run = terrain d'entraînement.</strong> Toutes les mécaniques du jeu sont accessibles ici. C'est la base sur laquelle repose toute l'expérience Flappy World.</div>
+
+  <h3 data-i18n="s2.h3.adv">Adventure — Le futur de Flappy World</h3>
+  <p data-i18n-html="s2.p.adv">Le mode <strong>Adventure</strong> est en cours de conception. Il conservera l'ADN du level design flap — même physique, même sensation — mais l'étendra en un vrai jeu de plateforme avec des niveaux, des défis et du contenu inédit.</p>
+  <div class="note" data-i18n-html="s2.adv.note"><strong>La surprise est préservée volontairement.</strong> Avant de révéler Adventure, les priorités sont : consolider les fondations, <strong>FUN &amp; REWARD.</strong> Le contenu additionnel qui fera vivre Flappy World dans la durée sera au cœur d'Adventure.</div>
+</div>
+
+
+<!-- ══════════════════════════════════
+     PAGE 5 — CONTRÔLES
+══════════════════════════════════ -->
+<div class="page">
+  <div class="section-header"><div class="num">3</div><h2 data-i18n="s3.h2">Contrôles</h2></div>
+
+  <h3 data-i18n="s3.h3.jump">Faire sauter l'oiseau</h3>
+  <div class="controls-grid">
+    <div class="ctrl-card"><span class="ctrl-icon">🖱️</span><div class="ctrl-device" data-i18n="s3.dev.mouse">Souris (desktop)</div><div class="ctrl-action" data-i18n-html="s3.act.mouse"><span class="ctrl-key">Clic gauche</span><br>n'importe où sur l'écran</div></div>
+    <div class="ctrl-card"><span class="ctrl-icon">⌨️</span><div class="ctrl-device" data-i18n="s3.dev.kbd">Clavier (desktop)</div><div class="ctrl-action" data-i18n-html="s3.act.kbd"><span class="ctrl-key">Espace</span> ou <span class="ctrl-key">↑</span></div></div>
+    <div class="ctrl-card"><span class="ctrl-icon">👆</span><div class="ctrl-device" data-i18n="s3.dev.touch">Tactile (mobile)</div><div class="ctrl-action" data-i18n-html="s3.act.touch">Toucher l'écran<br>n'importe où</div></div>
+  </div>
+  <div class="note" data-i18n-html="s3.note.jump"><strong>Un seul saut par impulsion :</strong> chaque pression applique une seule impulsion vers le haut. Appuyer plus longtemps n'augmente pas la hauteur — sauf si un trick est équipé (voir ci-dessous).</div>
+
+  <h3 data-i18n="s3.h3.hold">Maintien du bouton (tricks)</h3>
+  <p data-i18n="s3.p.hold">Certains tricks équipés depuis le Shop modifient le comportement au maintien :</p>
+  <table data-i18n-html="s3.table.tricks">
+    <tr><th>Trick</th><th>Maintien du bouton</th></tr>
+    <tr><td><strong>Toupie</strong></td><td>L'oiseau effectue un flip vertical puis plane lentement vers le bas tant que le bouton est maintenu. Relâcher reprend la chute normale.</td></tr>
+    <tr><td><strong>Pirouette</strong> (Looping)</td><td>Le bouton maintenu déclenche automatiquement des sauts répétés toutes les 22 frames, permettant de voler en continu.</td></tr>
+  </table>
+
+  <h3 data-i18n="s3.h3.nav">Naviguer dans les menus</h3>
+  <table data-i18n-html="s3.table.nav">
+    <tr><th>Action</th><th>Contrôle</th></tr>
+    <tr><td>Passer l'écran de démarrage</td><td>Clic / Toucher (après chargement des sons)</td></tr>
+    <tr><td>Lancer une partie (Free Run)</td><td>Clic sur le bouton <strong>Free Run</strong> dans le menu</td></tr>
+    <tr><td>Voir le TOP 10</td><td>Clic sur <strong>Historique</strong> dans le menu</td></tr>
+    <tr><td>Ouvrir le Shop</td><td>Clic sur <strong>Shop</strong> dans le menu</td></tr>
+    <tr><td>Retour au menu</td><td>Bouton <strong>Back</strong> en bas à gauche</td></tr>
+    <tr><td>Feuilleter le Shop</td><td>Flèches <strong>◀</strong> et <strong>▶</strong> en bas de l'écran</td></tr>
+    <tr><td>Rejouer (fin de partie)</td><td>Bouton <strong>Yes</strong> — page 3 des résultats</td></tr>
+    <tr><td>Retour au menu (fin de partie)</td><td>Bouton <strong>No</strong> — page 3 des résultats</td></tr>
+    <tr><td>Plein écran (desktop)</td><td>Bouton ⛶ en bas à droite du jeu</td></tr>
+  </table>
+  <div class="tip" data-i18n-html="s3.tip.mobile"><strong>Sur mobile :</strong> le jeu remplit automatiquement toute la hauteur de l'écran. Pour une immersion totale sur iOS, utilise « Ajouter à l'écran d'accueil » depuis Safari — le jeu s'ouvre alors sans barre de navigation, en plein écran natif.</div>
+</div>
+
+
+<!-- ══════════════════════════════════
+     PAGE 4 — SHOP & PERSONNALISATION
+══════════════════════════════════ -->
+<div class="page">
+  <div class="section-header"><div class="num">4</div><h2 data-i18n="s4.h2">Shop &amp; Personnalisation</h2></div>
+
+  <h3 data-i18n="s4.h3.coins">Les pièces</h3>
+  <p data-i18n-html="s4.p.coins">Chaque tuyau traversé avec succès rapporte <strong>1 pièce</strong>. Les pièces s'accumulent entre les parties et ne se perdent jamais — même si tu perds, les pièces de la partie sont conservées. Elles s'affichent en haut à gauche dans le menu principal.</p>
+
+  <h3 data-i18n="s4.h3.access">Accéder au Shop</h3>
+  <p data-i18n-html="s4.p.access">Depuis le menu principal → bouton <strong>Shop</strong>. Utilise les flèches <strong>◀ ▶</strong> pour naviguer entre les pages. Clique sur un article pour en voir le détail et la prévisualisation en direct.</p>
+
+  <h3 data-i18n="s4.h3.cats">Catégories d'articles</h3>
+  <div class="shop-types">
+    <div class="shop-type-card"><div class="type-name" data-i18n="s4.cat.skin">Skins — Couleur de l'oiseau</div><p data-i18n="s4.cat.skin.p">Change la couleur de ton oiseau. Deux skins spéciaux :</p><p class="examples" data-i18n-html="s4.cat.skin.ex"><strong>Phosphor</strong> : animation lumineuse verte pulsante.<br><strong>Multicolor</strong> : transition fluide entre 7 couleurs, avancée à chaque saut.</p></div>
+    <div class="shop-type-card"><div class="type-name" data-i18n="s4.cat.trail">Trails — Sillage</div><p data-i18n="s4.cat.trail.p">Laisse des particules dans le dos de l'oiseau pendant le vol.</p><p class="examples" data-i18n-html="s4.cat.trail.ex"><strong>Arc-en-ciel</strong> · <strong>Nuage</strong> · <strong>Miasma</strong> (bulles vertes)</p></div>
+    <div class="shop-type-card"><div class="type-name" data-i18n="s4.cat.trick">Tricks — Mouvements spéciaux</div><p data-i18n="s4.cat.trick.p">Active un effet tous les 3 sauts et modifie le comportement au maintien.</p><p class="examples" data-i18n-html="s4.cat.trick.ex"><strong>Toupie</strong> (planeur) · <strong>Pirouette</strong> (vol continu)</p></div>
+    <div class="shop-type-card"><div class="type-name" data-i18n="s4.cat.jump">Effets de saut</div><p data-i18n="s4.cat.jump.p">Ajoute un effet visuel à chaque saut.</p><p class="examples" data-i18n-html="s4.cat.jump.ex"><strong>Firework</strong> · <strong>Anneau</strong> · <strong>Fart</strong></p></div>
+    <div class="shop-type-card"><div class="type-name" data-i18n="s4.cat.sound">Son de saut</div><p data-i18n="s4.cat.sound.p">Remplace le son du saut (et de la mort) par une variante humoristique.</p><p class="examples" data-i18n-html="s4.cat.sound.ex"><strong>Pet</strong> — remplace aussi la musique de mort</p></div>
+    <div class="shop-type-card" style="background:#fffbe6; border-color:#f5d600;"><div class="type-name" style="color:#8a6000;" data-i18n="s4.cat.soon">À venir</div><p style="color:#666;" data-i18n="s4.cat.soon.p">Nouveaux skins · Nouveaux trails · Nouveaux tricks · Effets de saut inédits · Objets exclusifs mode Aventure</p></div>
+  </div>
+
+  <h3 data-i18n="s4.h3.buy">Acheter et équiper un article</h3>
+  <ol data-i18n-html="s4.buy.list"><li>Clic sur la carte de l'article → prévisualisation en direct sur l'oiseau animé</li><li>Clic sur <strong>Acheter</strong> → fenêtre de confirmation</li><li>Clic sur <strong>Confirmer</strong> → l'article est acheté et équipé automatiquement</li><li>Pour changer d'article équipé : clic sur un autre article acheté → <strong>Équiper</strong></li><li>Pour retirer un article sans le remplacer : clic sur l'article équipé → <strong>Déséquiper</strong></li></ol>
+  <div class="note" data-i18n-html="s4.note.slots">Chaque catégorie (skin, trail, trick, jump, son) possède son propre slot. Tu peux cumuler un skin + un trail + un trick + un effet de saut en même temps.</div>
+
+  <div style="border: 2px dashed #3a8fd4; border-radius: 8px; padding: 4mm 5mm; margin: 5mm 0;">
+  <h3 style="margin-top: 0;" data-i18n="s4.swap.h3">Bouton Swap — Token du jeu</h3>
+  <p data-i18n-html="s4.swap.p">Le bouton bleu <strong>Swap</strong> visible dans le Shop est réservé à la monnaie token native du jeu. Cette fonctionnalité est volontairement mise en veille — elle nécessite une réflexion approfondie sur la <strong>tokenomique</strong> avant d'être activée.</p>
+  <div class="warn" data-i18n-html="s4.swap.warn"><strong>Philosophie fondatrice — Block'N Dice :</strong><br>L'objectif n'est <em>pas</em> de créer un système spéculatif ou un crash game. La tokenomique visée repose sur un équilibre <strong>33 / 33 / 33</strong> : un tiers pour les joueurs (gains et récompenses), un tiers pour le créateur-développeur, un tiers pour l'infrastructure du jeu (autofinancement et pérennité dans le temps). Les fondations de Block'N Dice : <strong>divertissement d'abord, gains réels pour le joueur ensuite.</strong></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════
+     PAGE 5 — ASTUCES
+══════════════════════════════════ -->
+<div class="page">
+  <div class="section-header"><div class="num">5</div><h2 data-i18n="s5.h2">Astuces pour progresser</h2></div>
+
+  <h3 data-i18n="s5.h3.start">Bien débuter</h3>
+  <ul class="tips-list" data-i18n-html="s5.start.list"><li><strong>Rythme régulier</strong> l'erreur classique est de sauter trop vite ou trop lentement. Apprends à taper en rythme régulier plutôt que de réagir en urgence — l'oiseau doit toujours être en descente légère en abordant l'ouverture.</li><li><strong>Vise le centre de l'ouverture</strong> les tuyaux ont une ouverture de 130 px. Ne cherche pas à raser le bord supérieur ou inférieur — traverse toujours au centre pour maximiser ta marge d'erreur.</li><li><strong>Anticipe, ne réagis pas</strong> dès qu'un tuyau entre dans le champ visuel, évalue si tu dois monter ou descendre. Ne saute pas au moment où tu es déjà aligné — saute un instant avant pour que l'impulsion se soit partiellement dissipée au passage.</li><li><strong>Le plafond aussi te tue</strong> beaucoup de joueurs oublient le plafond. Un saut trop tôt après un autre peut envoyer l'oiseau hors de l'écran par le haut.</li></ul>
+
+  <h3 data-i18n="s5.h3.coins">Optimiser ses pièces</h3>
+  <ul class="tips-list" data-i18n-html="s5.coins.list"><li><strong>Maintenir le score courant</strong> la pièce émet un son différent (et plus satisfaisant) quand ton score dépasse ton record actuel. Utilise ce feedback audio pour savoir où tu en es sans regarder le compteur.</li><li><strong>Acheter en priorité</strong> commence par les articles peu chers (skin Vert à 10) pour débloquer le sentiment de progression, puis vise les trails (Nuage à 30) qui améliorent la lisibilité de la trajectoire sans modifier la physique.</li><li><strong>Trick Toupie pour les débutants</strong> le planeur au maintien (Toupie) permet de descendre lentement entre les tuyaux, ce qui laisse plus de temps pour viser. C'est le trick le plus accessible pour améliorer son score.</li></ul>
+
+  <h3 data-i18n="s5.h3.tricks">Utiliser les tricks en compétition</h3>
+  <table data-i18n-html="s5.tricks.table"><tr><th>Situation</th><th>Trick conseillé</th><th>Pourquoi</th></tr><tr><td>Tuyau avec ouverture très basse</td><td>Toupie (maintien)</td><td>Descente contrôlée au lieu d'une chute accélérée</td></tr><tr><td>Tuyaux rapprochés (enchaînement)</td><td>Pirouette (Looping)</td><td>Maintien permet de rester en l'air et de doser l'altitude</td></tr><tr><td>Style et prise de risque</td><td>Firework / Anneau</td><td>Effets visuels au saut — aucun impact sur la physique</td></tr></table>
+
+  <div class="warn" data-i18n-html="s5.warn.looping"><strong>La Pirouette (Looping) est le trick le plus difficile à maîtriser :</strong> le vol continu au maintien peut faire monter l'oiseau très rapidement et le projeter dans le plafond. À réserver aux joueurs qui contrôlent bien leur rythme.</div>
+
+  <h3 data-i18n="s5.h3.comfort">Paramètres de confort</h3>
+  <ul data-i18n-html="s5.comfort.list"><li><strong>Plein écran :</strong> active-le via le bouton ⛶ (desktop) pour éliminer toutes les distractions.</li><li><strong>Mobile :</strong> ajoute le jeu à l'écran d'accueil via Safari → partage → "Sur l'écran d'accueil" pour jouer sans la barre URL.</li><li><strong>Volume :</strong> le volume maître est réglable depuis le Shop (icône son en haut à droite) et est sauvegardé entre les sessions.</li></ul>
+</div>
+
+<div class="lang-switcher">
+  <button class="lang-btn lang-active" data-lang="fr" onclick="setLang('fr')" title="Français">
+    <svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><rect x="0" y="0" width="10" height="30" fill="#002395"/><rect x="10" y="0" width="10" height="30" fill="#fff"/><rect x="20" y="0" width="10" height="30" fill="#ED2939"/></svg>
+  </button>
+  <button class="lang-btn lang-soon" data-lang="en" onclick="setLang('en')" title="English">
+    <svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><rect width="30" height="30" fill="#012169"/><line x1="0" y1="0" x2="30" y2="30" stroke="#fff" stroke-width="4"/><line x1="30" y1="0" x2="0" y2="30" stroke="#fff" stroke-width="4"/><line x1="0" y1="0" x2="30" y2="30" stroke="#C8102E" stroke-width="2.5"/><line x1="30" y1="0" x2="0" y2="30" stroke="#C8102E" stroke-width="2.5"/><rect x="12" y="0" width="6" height="30" fill="#fff"/><rect x="0" y="12" width="30" height="6" fill="#fff"/><rect x="13" y="0" width="4" height="30" fill="#C8102E"/><rect x="0" y="13" width="30" height="4" fill="#C8102E"/></svg>
+  </button>
+  <button class="lang-btn lang-soon" data-lang="es" onclick="setLang('es')" title="Español">
+    <svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><rect x="0" y="0" width="30" height="8" fill="#c60b1e"/><rect x="0" y="8" width="30" height="14" fill="#ffc400"/><rect x="0" y="22" width="30" height="8" fill="#c60b1e"/></svg>
+  </button>
+</div>
+
+<script>
+const T = {
+  fr: {
+    'cover.tag':'Guide du joueur','cover.h2':'Comment jouer',
+    'cover.meta':'<strong>Genre</strong> Arcade / Réflexes<br><strong>Plateforme</strong> Navigateur web (desktop, mobile, tablette)<br><strong>Objectif</strong> Passer le plus de tuyaux possible sans toucher les obstacles<br><strong>Version</strong> v0.19.3',
+    'toc.title':'Sommaire','toc.1':'But du jeu','toc.2':'Free Run &amp; Adventure','toc.3':'Contrôles','toc.4':'Shop &amp; Personnalisation','toc.5':'Astuces pour progresser',
+    's1.h2':'But du jeu','s1.h3.obj':"L'objectif",
+    's1.p1':"Tu contrôles un oiseau pixel-art qui vole en continu vers la droite. Des tuyaux verts apparaissent régulièrement avec une ouverture au milieu. Ton unique but est de <strong>faire passer l'oiseau dans l'ouverture</strong> sans toucher les tuyaux, le sol ou le plafond.",
+    's1.p2':"Chaque tuyau traversé avec succès rapporte <strong>1 pièce</strong>. Les pièces s'accumulent et servent à acheter des articles dans le Shop. Il n'y a pas de fin — la partie continue jusqu'à la première collision.",
+    's1.tip':"<strong>Record personnel :</strong> si ton score dépasse ton meilleur score précédent, la mention <em>record</em> s'affiche en jaune sous le compteur pendant la partie. La pièce collectée émet aussi un son différent pour signaler le dépassement.",
+    's1.h3.end':'Ce qui met fin à la partie','s1.end.list':'<li>Toucher un tuyau (haut ou bas)</li><li>Toucher le sol</li><li>Toucher le plafond</li>',
+    's1.p.collision':"À la collision, l'oiseau est projeté hors de l'écran avec une animation d'impact, puis le tableau des scores s'affiche.",
+    's1.h3.flow':"Déroulement d'une session",'flow.title':'Écran titre','flow.click':'clic','flow.freerun':'Free Run','flow.cinematic':'Cinématique','flow.countdown':'Décompte','flow.game':'Partie','flow.results':'Résultats',
+    's1.h3.score':'Le score et le leaderboard','s1.p.score':"Ton score est le nombre de pièces collectées dans la partie. À la fin, il est automatiquement inséré dans le <strong>TOP 10 local</strong> (sauvegardé dans le navigateur).",
+    's1.table.score':"<tr><th>Écran résultats — Page</th><th>Contenu</th><th>Action pour avancer</th></tr><tr><td>Page 1 — Game Over</td><td>Score de la partie + rang dans le TOP 10</td><td>Clic / Espace / Toucher</td></tr><tr><td>Page 2 — TOP 10</td><td>Les 10 meilleurs scores enregistrés</td><td>Clic / Espace / Toucher</td></tr><tr><td>Page 3 — Try Again ?</td><td>Choix Rejouer ou Retour au menu</td><td>Bouton <strong>Yes</strong> ou <strong>No</strong></td></tr>",
+    's2.h2':'Free Run &amp; Adventure','s2.h3.freerun':"Free Run — S'entraîner librement",
+    's2.p.freerun':"Le mode <strong>Free Run</strong> est le mode de jeu actuel et le cœur de l'expérience. Il n'y a pas d'enjeu autre que de battre son propre record — c'est l'endroit pour apprendre, progresser, et prendre plaisir à maîtriser le saut.",
+    's2.freerun.list':'<li>Tester les articles achetés dans le Shop (skins, trails, tricks, effets)</li><li>Découvrir et maîtriser les tricks Toupie et Pirouette</li><li>Accumuler des pièces pour débloquer de nouveaux articles</li><li>Grimper dans le TOP 10 local et améliorer son record personnel</li>',
+    's2.freerun.tip':"<strong>Free Run = terrain d'entraînement.</strong> Toutes les mécaniques du jeu sont accessibles ici. C'est la base sur laquelle repose toute l'expérience Flappy World.",
+    's2.h3.adv':'Adventure — Le futur de Flappy World','s2.p.adv':"Le mode <strong>Adventure</strong> est en cours de conception. Il conservera l'ADN du level design flap — même physique, même sensation — mais l'étendra en un vrai jeu de plateforme avec des niveaux, des défis et du contenu inédit.",
+    's2.adv.note':'<strong>La surprise est préservée volontairement.</strong> Avant de révéler Adventure, les priorités sont : consolider les fondations, <strong>FUN &amp; REWARD.</strong> Le contenu additionnel qui fera vivre Flappy World dans la durée sera au cœur d\'Adventure.',
+    's3.h2':'Contrôles','s3.h3.jump':"Faire sauter l'oiseau",'s3.dev.mouse':'Souris (desktop)','s3.act.mouse':'<span class="ctrl-key">Clic gauche</span><br>n\'importe où sur l\'écran','s3.dev.kbd':'Clavier (desktop)','s3.act.kbd':'<span class="ctrl-key">Espace</span> ou <span class="ctrl-key">↑</span>','s3.dev.touch':'Tactile (mobile)','s3.act.touch':"Toucher l'écran<br>n'importe où",
+    's3.note.jump':"<strong>Un seul saut par impulsion :</strong> chaque pression applique une seule impulsion vers le haut. Appuyer plus longtemps n'augmente pas la hauteur — sauf si un trick est équipé (voir ci-dessous).",
+    's3.h3.hold':'Maintien du bouton (tricks)','s3.p.hold':'Certains tricks équipés depuis le Shop modifient le comportement au maintien :',
+    's3.table.tricks':"<tr><th>Trick</th><th>Maintien du bouton</th></tr><tr><td><strong>Toupie</strong></td><td>L'oiseau effectue un flip vertical puis plane lentement vers le bas tant que le bouton est maintenu. Relâcher reprend la chute normale.</td></tr><tr><td><strong>Pirouette</strong> (Looping)</td><td>Le bouton maintenu déclenche automatiquement des sauts répétés toutes les 22 frames, permettant de voler en continu.</td></tr>",
+    's3.h3.nav':'Naviguer dans les menus','s3.table.nav':"<tr><th>Action</th><th>Contrôle</th></tr><tr><td>Passer l'écran de démarrage</td><td>Clic / Toucher (après chargement des sons)</td></tr><tr><td>Lancer une partie (Free Run)</td><td>Clic sur le bouton <strong>Free Run</strong> dans le menu</td></tr><tr><td>Voir le TOP 10</td><td>Clic sur <strong>Historique</strong> dans le menu</td></tr><tr><td>Ouvrir le Shop</td><td>Clic sur <strong>Shop</strong> dans le menu</td></tr><tr><td>Retour au menu</td><td>Bouton <strong>Back</strong> en bas à gauche</td></tr><tr><td>Feuilleter le Shop</td><td>Flèches <strong>◀</strong> et <strong>▶</strong> en bas de l'écran</td></tr><tr><td>Rejouer (fin de partie)</td><td>Bouton <strong>Yes</strong> — page 3 des résultats</td></tr><tr><td>Retour au menu (fin de partie)</td><td>Bouton <strong>No</strong> — page 3 des résultats</td></tr><tr><td>Plein écran (desktop)</td><td>Bouton ⛶ en bas à droite du jeu</td></tr>",
+    's3.tip.mobile':"<strong>Sur mobile :</strong> le jeu remplit automatiquement toute la hauteur de l'écran. Pour une immersion totale sur iOS, utilise « Ajouter à l'écran d'accueil » depuis Safari — le jeu s'ouvre alors sans barre de navigation, en plein écran natif.",
+    's4.h2':'Shop &amp; Personnalisation','s4.h3.coins':'Les pièces','s4.p.coins':"Chaque tuyau traversé avec succès rapporte <strong>1 pièce</strong>. Les pièces s'accumulent entre les parties et ne se perdent jamais — même si tu perds, les pièces de la partie sont conservées. Elles s'affichent en haut à gauche dans le menu principal.",
+    's4.h3.access':'Accéder au Shop','s4.p.access':"Depuis le menu principal → bouton <strong>Shop</strong>. Utilise les flèches <strong>◀ ▶</strong> pour naviguer entre les pages. Clique sur un article pour en voir le détail et la prévisualisation en direct.",
+    's4.h3.cats':"Catégories d'articles",
+    's4.cat.skin':"Skins — Couleur de l'oiseau",'s4.cat.skin.p':'Change la couleur de ton oiseau. Deux skins spéciaux :','s4.cat.skin.ex':'<strong>Phosphor</strong> : animation lumineuse verte pulsante.<br><strong>Multicolor</strong> : transition fluide entre 7 couleurs, avancée à chaque saut.',
+    's4.cat.trail':'Trails — Sillage','s4.cat.trail.p':"Laisse des particules dans le dos de l'oiseau pendant le vol.",'s4.cat.trail.ex':'<strong>Arc-en-ciel</strong> · <strong>Nuage</strong> · <strong>Miasma</strong> (bulles vertes)',
+    's4.cat.trick':'Tricks — Mouvements spéciaux','s4.cat.trick.p':'Active un effet tous les 3 sauts et modifie le comportement au maintien.','s4.cat.trick.ex':'<strong>Toupie</strong> (planeur) · <strong>Pirouette</strong> (vol continu)',
+    's4.cat.jump':'Effets de saut','s4.cat.jump.p':'Ajoute un effet visuel à chaque saut.','s4.cat.jump.ex':'<strong>Firework</strong> · <strong>Anneau</strong> · <strong>Fart</strong>',
+    's4.cat.sound':'Son de saut','s4.cat.sound.p':'Remplace le son du saut (et de la mort) par une variante humoristique.','s4.cat.sound.ex':'<strong>Pet</strong> — remplace aussi la musique de mort',
+    's4.cat.soon':'À venir','s4.cat.soon.p':'Nouveaux skins · Nouveaux trails · Nouveaux tricks · Effets de saut inédits · Objets exclusifs mode Aventure',
+    's4.h3.buy':'Acheter et équiper un article','s4.buy.list':"<li>Clic sur la carte de l'article → prévisualisation en direct sur l'oiseau animé</li><li>Clic sur <strong>Acheter</strong> → fenêtre de confirmation</li><li>Clic sur <strong>Confirmer</strong> → l'article est acheté et équipé automatiquement</li><li>Pour changer d'article équipé : clic sur un autre article acheté → <strong>Équiper</strong></li><li>Pour retirer un article sans le remplacer : clic sur l'article équipé → <strong>Déséquiper</strong></li>",
+    's4.note.slots':'Chaque catégorie (skin, trail, trick, jump, son) possède son propre slot. Tu peux cumuler un skin + un trail + un trick + un effet de saut en même temps.',
+    's4.swap.h3':'Bouton Swap — Token du jeu','s4.swap.p':"Le bouton bleu <strong>Swap</strong> visible dans le Shop est réservé à la monnaie token native du jeu. Cette fonctionnalité est volontairement mise en veille — elle nécessite une réflexion approfondie sur la <strong>tokenomique</strong> avant d'être activée.",
+    's4.swap.warn':"<strong>Philosophie fondatrice — Block'N Dice :</strong><br>L'objectif n'est <em>pas</em> de créer un système spéculatif ou un crash game. La tokenomique visée repose sur un équilibre <strong>33 / 33 / 33</strong> : un tiers pour les joueurs (gains et récompenses), un tiers pour le créateur-développeur, un tiers pour l'infrastructure du jeu (autofinancement et pérennité dans le temps). Les fondations de Block'N Dice : <strong>divertissement d'abord, gains réels pour le joueur ensuite.</strong>",
+    's5.h2':'Astuces pour progresser','s5.h3.start':'Bien débuter','s5.start.list':'<li><strong>Rythme régulier</strong> l\'erreur classique est de sauter trop vite ou trop lentement. Apprends à taper en rythme régulier plutôt que de réagir en urgence — l\'oiseau doit toujours être en descente légère en abordant l\'ouverture.</li><li><strong>Vise le centre de l\'ouverture</strong> les tuyaux ont une ouverture de 130 px. Ne cherche pas à raser le bord supérieur ou inférieur — traverse toujours au centre pour maximiser ta marge d\'erreur.</li><li><strong>Anticipe, ne réagis pas</strong> dès qu\'un tuyau entre dans le champ visuel, évalue si tu dois monter ou descendre. Ne saute pas au moment où tu es déjà aligné — saute un instant avant pour que l\'impulsion se soit partiellement dissipée au passage.</li><li><strong>Le plafond aussi te tue</strong> beaucoup de joueurs oublient le plafond. Un saut trop tôt après un autre peut envoyer l\'oiseau hors de l\'écran par le haut.</li>',
+    's5.h3.coins':'Optimiser ses pièces','s5.coins.list':'<li><strong>Maintenir le score courant</strong> la pièce émet un son différent (et plus satisfaisant) quand ton score dépasse ton record actuel. Utilise ce feedback audio pour savoir où tu en es sans regarder le compteur.</li><li><strong>Acheter en priorité</strong> commence par les articles peu chers (skin Vert à 10) pour débloquer le sentiment de progression, puis vise les trails (Nuage à 30) qui améliorent la lisibilité de la trajectoire sans modifier la physique.</li><li><strong>Trick Toupie pour les débutants</strong> le planeur au maintien (Toupie) permet de descendre lentement entre les tuyaux, ce qui laisse plus de temps pour viser. C\'est le trick le plus accessible pour améliorer son score.</li>',
+    's5.h3.tricks':'Utiliser les tricks en compétition','s5.tricks.table':'<tr><th>Situation</th><th>Trick conseillé</th><th>Pourquoi</th></tr><tr><td>Tuyau avec ouverture très basse</td><td>Toupie (maintien)</td><td>Descente contrôlée au lieu d\'une chute accélérée</td></tr><tr><td>Tuyaux rapprochés (enchaînement)</td><td>Pirouette (Looping)</td><td>Maintien permet de rester en l\'air et de doser l\'altitude</td></tr><tr><td>Style et prise de risque</td><td>Firework / Anneau</td><td>Effets visuels au saut — aucun impact sur la physique</td></tr>',
+    's5.warn.looping':'<strong>La Pirouette (Looping) est le trick le plus difficile à maîtriser :</strong> le vol continu au maintien peut faire monter l\'oiseau très rapidement et le projeter dans le plafond. À réserver aux joueurs qui contrôlent bien leur rythme.',
+    's5.h3.comfort':'Paramètres de confort','s5.comfort.list':'<li><strong>Plein écran :</strong> active-le via le bouton ⛶ (desktop) pour éliminer toutes les distractions.</li><li><strong>Mobile :</strong> ajoute le jeu à l\'écran d\'accueil via Safari → partage → "Sur l\'écran d\'accueil" pour jouer sans la barre URL.</li><li><strong>Volume :</strong> le volume maître est réglable depuis le Shop (icône son en haut à droite) et est sauvegardé entre les sessions.</li>'
+  },
+  en: {
+    'cover.tag':"Player's Guide",'cover.h2':'How to play',
+    'cover.meta':'<strong>Genre</strong> Arcade / Reflex<br><strong>Platform</strong> Web browser (desktop, mobile, tablet)<br><strong>Objective</strong> Pass as many pipes as possible without hitting obstacles<br><strong>Version</strong> v0.19.3',
+    'toc.title':'Contents','toc.1':'Game Objective','toc.2':'Free Run &amp; Adventure','toc.3':'Controls','toc.4':'Shop &amp; Customization','toc.5':'Tips to Progress',
+    's1.h2':'Game Objective','s1.h3.obj':'The objective',
+    's1.p1':'You control a pixel-art bird flying continuously to the right. Green pipes appear regularly with a gap in the middle. Your only goal is to <strong>guide the bird through the gap</strong> without hitting the pipes, the ground, or the ceiling.',
+    's1.p2':'Each pipe passed successfully earns <strong>1 coin</strong>. Coins accumulate and are used to buy items in the Shop. There is no end — the run continues until the first collision.',
+    's1.tip':'<strong>Personal record:</strong> if your score beats your previous best, the word <em>record</em> appears in yellow below the counter during the run. The collected coin also plays a different sound to signal the new record.',
+    's1.h3.end':'What ends the run','s1.end.list':'<li>Hitting a pipe (top or bottom)</li><li>Hitting the ground</li><li>Hitting the ceiling</li>',
+    's1.p.collision':'On collision, the bird is launched off-screen with an impact animation, then the score screen appears.',
+    's1.h3.flow':'Session flow','flow.title':'Title screen','flow.click':'click','flow.freerun':'Free Run','flow.cinematic':'Cinematic','flow.countdown':'Countdown','flow.game':'Game','flow.results':'Results',
+    's1.h3.score':'Score &amp; leaderboard','s1.p.score':'Your score is the number of coins collected during the run. At the end, it is automatically inserted into the <strong>local TOP 10</strong> (saved in the browser).',
+    's1.table.score':'<tr><th>Results screen — Page</th><th>Content</th><th>Action to continue</th></tr><tr><td>Page 1 — Game Over</td><td>Run score + rank in TOP 10</td><td>Click / Space / Tap</td></tr><tr><td>Page 2 — TOP 10</td><td>Top 10 best scores saved</td><td>Click / Space / Tap</td></tr><tr><td>Page 3 — Try Again?</td><td>Play again or Return to menu</td><td>Button <strong>Yes</strong> or <strong>No</strong></td></tr>',
+    's2.h2':'Free Run &amp; Adventure','s2.h3.freerun':'Free Run — Practice freely',
+    's2.p.freerun':'<strong>Free Run</strong> is the current game mode and the heart of the experience. There is no pressure other than beating your own record — this is the place to learn, improve, and enjoy mastering the jump.',
+    's2.freerun.list':'<li>Test items purchased in the Shop (skins, trails, tricks, effects)</li><li>Discover and master the Toupie and Pirouette tricks</li><li>Accumulate coins to unlock new items</li><li>Climb the local TOP 10 and improve your personal record</li>',
+    's2.freerun.tip':'<strong>Free Run = training ground.</strong> All game mechanics are accessible here. It is the foundation on which the entire Flappy World experience rests.',
+    's2.h3.adv':'Adventure — The future of Flappy World','s2.p.adv':'<strong>Adventure</strong> mode is currently in development. It will preserve the flap level-design DNA — same physics, same feel — but extend it into a full platformer with levels, challenges, and new content.',
+    's2.adv.note':'<strong>The surprise is intentionally preserved.</strong> Before revealing Adventure, the priorities are: consolidate the foundations, <strong>FUN &amp; REWARD.</strong> The additional content that will keep Flappy World alive long-term will be at the heart of Adventure.',
+    's3.h2':'Controls','s3.h3.jump':'Making the bird jump','s3.dev.mouse':'Mouse (desktop)','s3.act.mouse':'<span class="ctrl-key">Left click</span><br>anywhere on screen','s3.dev.kbd':'Keyboard (desktop)','s3.act.kbd':'<span class="ctrl-key">Space</span> or <span class="ctrl-key">↑</span>','s3.dev.touch':'Touch (mobile)','s3.act.touch':'Tap the screen<br>anywhere',
+    's3.note.jump':'<strong>One jump per press:</strong> each press applies a single upward impulse. Holding longer does not increase height — unless a trick is equipped (see below).',
+    's3.h3.hold':'Holding the button (tricks)','s3.p.hold':'Some tricks equipped from the Shop modify the behaviour when the button is held:',
+    's3.table.tricks':'<tr><th>Trick</th><th>Hold button</th></tr><tr><td><strong>Toupie</strong></td><td>The bird performs a vertical flip then slowly glides downward while the button is held. Releasing resumes normal fall.</td></tr><tr><td><strong>Pirouette</strong> (Looping)</td><td>Holding the button automatically triggers repeated jumps every 22 frames, allowing continuous flight.</td></tr>',
+    's3.h3.nav':'Navigating menus','s3.table.nav':'<tr><th>Action</th><th>Control</th></tr><tr><td>Skip the start screen</td><td>Click / Tap (after sounds load)</td></tr><tr><td>Start a run (Free Run)</td><td>Click the <strong>Free Run</strong> button in the menu</td></tr><tr><td>View TOP 10</td><td>Click <strong>History</strong> in the menu</td></tr><tr><td>Open Shop</td><td>Click <strong>Shop</strong> in the menu</td></tr><tr><td>Return to menu</td><td><strong>Back</strong> button bottom-left</td></tr><tr><td>Browse Shop</td><td>Arrows <strong>◀</strong> and <strong>▶</strong> at the bottom</td></tr><tr><td>Play again (end of run)</td><td><strong>Yes</strong> button — page 3 of results</td></tr><tr><td>Return to menu (end of run)</td><td><strong>No</strong> button — page 3 of results</td></tr><tr><td>Fullscreen (desktop)</td><td>⛶ button bottom-right of the game</td></tr>',
+    's3.tip.mobile':'<strong>On mobile:</strong> the game automatically fills the entire screen height. For full immersion on iOS, use "Add to Home Screen" from Safari — the game opens without a navigation bar, in native fullscreen.',
+    's4.h2':'Shop &amp; Customization','s4.h3.coins':'Coins','s4.p.coins':'Each pipe passed successfully earns <strong>1 coin</strong>. Coins accumulate between runs and are never lost — even if you die, the coins from the run are kept. They are displayed in the top-left of the main menu.',
+    's4.h3.access':'Accessing the Shop','s4.p.access':'From the main menu → <strong>Shop</strong> button. Use arrows <strong>◀ ▶</strong> to browse pages. Click on an item to see details and a live preview.',
+    's4.h3.cats':'Item categories',
+    's4.cat.skin':"Skins — Bird colour",'s4.cat.skin.p':"Changes your bird's colour. Two special skins:",'s4.cat.skin.ex':'<strong>Phosphor</strong>: pulsing green light animation.<br><strong>Multicolor</strong>: smooth transition between 7 colours, advances on each jump.',
+    's4.cat.trail':'Trails — Wake','s4.cat.trail.p':'Leaves particles behind the bird during flight.','s4.cat.trail.ex':'<strong>Rainbow</strong> · <strong>Cloud</strong> · <strong>Miasma</strong> (green bubbles)',
+    's4.cat.trick':'Tricks — Special moves','s4.cat.trick.p':'Triggers an effect every 3 jumps and modifies the hold behaviour.','s4.cat.trick.ex':'<strong>Toupie</strong> (glider) · <strong>Pirouette</strong> (continuous flight)',
+    's4.cat.jump':'Jump effects','s4.cat.jump.p':'Adds a visual effect on each jump.','s4.cat.jump.ex':'<strong>Firework</strong> · <strong>Ring</strong> · <strong>Fart</strong>',
+    's4.cat.sound':'Jump sound','s4.cat.sound.p':'Replaces the jump (and death) sound with a humorous variant.','s4.cat.sound.ex':'<strong>Pet</strong> — also replaces the death music',
+    's4.cat.soon':'Coming soon','s4.cat.soon.p':'New skins · New trails · New tricks · New jump effects · Exclusive Adventure mode items',
+    's4.h3.buy':'Buying and equipping an item','s4.buy.list':'<li>Click on an item card → live preview on the animated bird</li><li>Click <strong>Buy</strong> → confirmation window</li><li>Click <strong>Confirm</strong> → item is bought and automatically equipped</li><li>To change equipped item: click another purchased item → <strong>Equip</strong></li><li>To remove an item without replacing it: click the equipped item → <strong>Unequip</strong></li>',
+    's4.note.slots':'Each category (skin, trail, trick, jump, sound) has its own slot. You can combine a skin + a trail + a trick + a jump effect at the same time.',
+    's4.swap.h3':'Swap Button — Game Token','s4.swap.p':'The blue <strong>Swap</strong> button visible in the Shop is reserved for the game\'s native token currency. This feature is intentionally on hold — it requires in-depth thinking about <strong>tokenomics</strong> before activation.',
+    's4.swap.warn':"<strong>Founding philosophy — Block'N Dice:</strong><br>The goal is <em>not</em> to create a speculative system or crash game. The planned tokenomics are based on a <strong>33 / 33 / 33</strong> balance: one third for players (gains and rewards), one third for the creator-developer, one third for the game infrastructure (self-funding and longevity). Block'N Dice foundations: <strong>entertainment first, real player rewards second.</strong>",
+    's5.h2':'Tips to Progress','s5.h3.start':'Getting started','s5.start.list':'<li><strong>Steady rhythm</strong> the classic mistake is jumping too fast or too slow. Learn to tap at a steady pace rather than reacting urgently — the bird should always be descending slightly as it approaches the gap.</li><li><strong>Aim for the centre of the gap</strong> the pipes have a 130 px opening. Don\'t try to skim the top or bottom edge — always pass through the centre to maximise your margin for error.</li><li><strong>Anticipate, don\'t react</strong> as soon as a pipe enters your field of view, evaluate whether you need to rise or descend. Don\'t jump when you\'re already aligned — jump a moment before so the impulse has partially dissipated by the time you pass.</li><li><strong>The ceiling kills you too</strong> many players forget the ceiling. Jumping too soon after another jump can send the bird off-screen at the top.</li>',
+    's5.h3.coins':'Optimising your coins','s5.coins.list':'<li><strong>Track your current score</strong> the coin plays a different (and more satisfying) sound when your score beats your current record. Use this audio feedback to know where you stand without looking at the counter.</li><li><strong>Buy in priority</strong> start with cheap items (Green skin at 10) to unlock the sense of progression, then aim for trails (Cloud at 30) which improve trajectory readability without changing the physics.</li><li><strong>Toupie trick for beginners</strong> the hold glider (Toupie) lets you descend slowly between pipes, giving more time to aim. It\'s the most accessible trick for improving your score.</li>',
+    's5.h3.tricks':'Using tricks in competition','s5.tricks.table':'<tr><th>Situation</th><th>Recommended trick</th><th>Why</th></tr><tr><td>Pipe with very low gap</td><td>Toupie (hold)</td><td>Controlled descent instead of accelerated fall</td></tr><tr><td>Closely spaced pipes</td><td>Pirouette (Looping)</td><td>Hold lets you stay airborne and control altitude</td></tr><tr><td>Style and risk-taking</td><td>Firework / Ring</td><td>Visual jump effects — no impact on physics</td></tr>',
+    's5.warn.looping':'<strong>Pirouette (Looping) is the hardest trick to master:</strong> continuous flight while holding can make the bird rise very quickly and send it into the ceiling. Reserve it for players who have good rhythm control.',
+    's5.h3.comfort':'Comfort settings','s5.comfort.list':'<li><strong>Fullscreen:</strong> activate it via the ⛶ button (desktop) to eliminate all distractions.</li><li><strong>Mobile:</strong> add the game to your home screen via Safari → share → "Add to Home Screen" to play without the URL bar.</li><li><strong>Volume:</strong> master volume is adjustable from the Shop (sound icon top-right) and is saved between sessions.</li>'
+  },
+  es: {
+    'cover.tag':'Guía del Jugador','cover.h2':'Cómo jugar',
+    'cover.meta':'<strong>Género</strong> Arcade / Reflejos<br><strong>Plataforma</strong> Navegador web (escritorio, móvil, tableta)<br><strong>Objetivo</strong> Pasar el mayor número de tuberías posible sin tocar los obstáculos<br><strong>Versión</strong> v0.19.3',
+    'toc.title':'Índice','toc.1':'Objetivo del juego','toc.2':'Free Run &amp; Adventure','toc.3':'Controles','toc.4':'Tienda &amp; Personalización','toc.5':'Consejos para progresar',
+    's1.h2':'Objetivo del juego','s1.h3.obj':'El objetivo',
+    's1.p1':'Controlas un pájaro pixel-art que vuela continuamente hacia la derecha. Tuberías verdes aparecen regularmente con una abertura en el medio. Tu único objetivo es <strong>hacer pasar al pájaro por la abertura</strong> sin tocar las tuberías, el suelo o el techo.',
+    's1.p2':'Cada tubería superada con éxito otorga <strong>1 moneda</strong>. Las monedas se acumulan y sirven para comprar artículos en la Tienda. No hay final — la partida continúa hasta la primera colisión.',
+    's1.tip':'<strong>Récord personal:</strong> si tu puntuación supera tu mejor marca anterior, aparece la mención <em>récord</em> en amarillo bajo el contador durante la partida. La moneda recogida también emite un sonido diferente para señalar el nuevo récord.',
+    's1.h3.end':'Qué pone fin a la partida','s1.end.list':'<li>Tocar una tubería (arriba o abajo)</li><li>Tocar el suelo</li><li>Tocar el techo</li>',
+    's1.p.collision':'Al colisionar, el pájaro sale disparado fuera de la pantalla con una animación de impacto, y luego aparece la pantalla de puntuaciones.',
+    's1.h3.flow':'Flujo de una sesión','flow.title':'Pantalla de inicio','flow.click':'clic','flow.freerun':'Free Run','flow.cinematic':'Cinemática','flow.countdown':'Cuenta atrás','flow.game':'Partida','flow.results':'Resultados',
+    's1.h3.score':'Puntuación y clasificación','s1.p.score':'Tu puntuación es el número de monedas recogidas durante la partida. Al final, se inserta automáticamente en el <strong>TOP 10 local</strong> (guardado en el navegador).',
+    's1.table.score':'<tr><th>Pantalla resultados — Página</th><th>Contenido</th><th>Acción para avanzar</th></tr><tr><td>Página 1 — Game Over</td><td>Puntuación + posición en el TOP 10</td><td>Clic / Espacio / Toque</td></tr><tr><td>Página 2 — TOP 10</td><td>Los 10 mejores registros guardados</td><td>Clic / Espacio / Toque</td></tr><tr><td>Página 3 — ¿Reintentar?</td><td>Jugar de nuevo o Volver al menú</td><td>Botón <strong>Yes</strong> o <strong>No</strong></td></tr>',
+    's2.h2':'Free Run &amp; Adventure','s2.h3.freerun':'Free Run — Entrenar libremente',
+    's2.p.freerun':'El modo <strong>Free Run</strong> es el modo de juego actual y el corazón de la experiencia. No hay presión más allá de batir tu propio récord — es el lugar para aprender, progresar y disfrutar dominando el salto.',
+    's2.freerun.list':'<li>Probar los artículos comprados en la Tienda (skins, trails, tricks, efectos)</li><li>Descubrir y dominar los tricks Toupie y Pirouette</li><li>Acumular monedas para desbloquear nuevos artículos</li><li>Escalar el TOP 10 local y mejorar tu récord personal</li>',
+    's2.freerun.tip':'<strong>Free Run = campo de entrenamiento.</strong> Todas las mecánicas del juego son accesibles aquí. Es la base sobre la que descansa toda la experiencia Flappy World.',
+    's2.h3.adv':'Adventure — El futuro de Flappy World','s2.p.adv':'El modo <strong>Adventure</strong> está en desarrollo. Conservará el ADN del diseño de niveles flap — misma física, misma sensación — pero lo extenderá en un verdadero juego de plataformas con niveles, desafíos y contenido inédito.',
+    's2.adv.note':'<strong>La sorpresa se preserva intencionalmente.</strong> Antes de revelar Adventure, las prioridades son: consolidar los cimientos, <strong>FUN &amp; REWARD.</strong> El contenido adicional que mantendrá vivo Flappy World a largo plazo estará en el corazón de Adventure.',
+    's3.h2':'Controles','s3.h3.jump':'Hacer saltar al pájaro','s3.dev.mouse':'Ratón (escritorio)','s3.act.mouse':'<span class="ctrl-key">Clic izquierdo</span><br>en cualquier lugar','s3.dev.kbd':'Teclado (escritorio)','s3.act.kbd':'<span class="ctrl-key">Espacio</span> o <span class="ctrl-key">↑</span>','s3.dev.touch':'Táctil (móvil)','s3.act.touch':'Tocar la pantalla<br>en cualquier lugar',
+    's3.note.jump':'<strong>Un solo salto por pulsación:</strong> cada pulsación aplica un único impulso hacia arriba. Mantener más tiempo no aumenta la altura — salvo si hay un trick equipado (ver más abajo).',
+    's3.h3.hold':'Mantener el botón (tricks)','s3.p.hold':'Algunos tricks equipados desde la Tienda modifican el comportamiento al mantener:',
+    's3.table.tricks':'<tr><th>Trick</th><th>Mantener botón</th></tr><tr><td><strong>Toupie</strong></td><td>El pájaro realiza un giro vertical y luego planea lentamente hacia abajo mientras se mantiene el botón. Soltarlo reanuda la caída normal.</td></tr><tr><td><strong>Pirouette</strong> (Looping)</td><td>Mantener el botón activa saltos repetidos automáticamente cada 22 frames, permitiendo volar continuamente.</td></tr>',
+    's3.h3.nav':'Navegar por los menús','s3.table.nav':'<tr><th>Acción</th><th>Control</th></tr><tr><td>Saltar la pantalla de inicio</td><td>Clic / Toque (tras cargar los sonidos)</td></tr><tr><td>Iniciar partida (Free Run)</td><td>Clic en el botón <strong>Free Run</strong> del menú</td></tr><tr><td>Ver el TOP 10</td><td>Clic en <strong>Historial</strong> del menú</td></tr><tr><td>Abrir la Tienda</td><td>Clic en <strong>Shop</strong> del menú</td></tr><tr><td>Volver al menú</td><td>Botón <strong>Back</strong> abajo a la izquierda</td></tr><tr><td>Explorar la Tienda</td><td>Flechas <strong>◀</strong> y <strong>▶</strong> en la parte inferior</td></tr><tr><td>Jugar de nuevo (fin de partida)</td><td>Botón <strong>Yes</strong> — página 3 de resultados</td></tr><tr><td>Volver al menú (fin de partida)</td><td>Botón <strong>No</strong> — página 3 de resultados</td></tr><tr><td>Pantalla completa (escritorio)</td><td>Botón ⛶ abajo a la derecha del juego</td></tr>',
+    's3.tip.mobile':'<strong>En móvil:</strong> el juego llena automáticamente toda la altura de pantalla. Para total inmersión en iOS, usa "Añadir a pantalla de inicio" desde Safari — el juego se abre sin barra de navegación, en pantalla completa nativa.',
+    's4.h2':'Tienda &amp; Personalización','s4.h3.coins':'Las monedas','s4.p.coins':'Cada tubería superada con éxito otorga <strong>1 moneda</strong>. Las monedas se acumulan entre partidas y nunca se pierden — incluso si pierdes, las monedas de la partida se conservan. Se muestran en la parte superior izquierda del menú principal.',
+    's4.h3.access':'Acceder a la Tienda','s4.p.access':'Desde el menú principal → botón <strong>Shop</strong>. Usa las flechas <strong>◀ ▶</strong> para navegar entre páginas. Haz clic en un artículo para ver los detalles y la vista previa en vivo.',
+    's4.h3.cats':'Categorías de artículos',
+    's4.cat.skin':'Skins — Color del pájaro','s4.cat.skin.p':'Cambia el color de tu pájaro. Dos skins especiales:','s4.cat.skin.ex':'<strong>Phosphor</strong>: animación luminosa verde pulsante.<br><strong>Multicolor</strong>: transición fluida entre 7 colores, avanza en cada salto.',
+    's4.cat.trail':'Trails — Estela','s4.cat.trail.p':'Deja partículas detrás del pájaro durante el vuelo.','s4.cat.trail.ex':'<strong>Arcoíris</strong> · <strong>Nube</strong> · <strong>Miasma</strong> (burbujas verdes)',
+    's4.cat.trick':'Tricks — Movimientos especiales','s4.cat.trick.p':'Activa un efecto cada 3 saltos y modifica el comportamiento al mantener.','s4.cat.trick.ex':'<strong>Toupie</strong> (planeador) · <strong>Pirouette</strong> (vuelo continuo)',
+    's4.cat.jump':'Efectos de salto','s4.cat.jump.p':'Añade un efecto visual en cada salto.','s4.cat.jump.ex':'<strong>Firework</strong> · <strong>Anillo</strong> · <strong>Pedo</strong>',
+    's4.cat.sound':'Sonido de salto','s4.cat.sound.p':'Reemplaza el sonido del salto (y la muerte) por una variante humorística.','s4.cat.sound.ex':'<strong>Pedo</strong> — también reemplaza la música de muerte',
+    's4.cat.soon':'Próximamente','s4.cat.soon.p':'Nuevos skins · Nuevos trails · Nuevos tricks · Nuevos efectos de salto · Artículos exclusivos modo Aventura',
+    's4.h3.buy':'Comprar y equipar un artículo','s4.buy.list':'<li>Clic en la carta del artículo → vista previa en vivo sobre el pájaro animado</li><li>Clic en <strong>Comprar</strong> → ventana de confirmación</li><li>Clic en <strong>Confirmar</strong> → el artículo se compra y se equipa automáticamente</li><li>Para cambiar artículo equipado: clic en otro artículo comprado → <strong>Equipar</strong></li><li>Para quitar un artículo sin reemplazarlo: clic en el artículo equipado → <strong>Desequipar</strong></li>',
+    's4.note.slots':'Cada categoría (skin, trail, trick, salto, sonido) tiene su propio hueco. Puedes combinar un skin + un trail + un trick + un efecto de salto al mismo tiempo.',
+    's4.swap.h3':'Botón Swap — Token del juego','s4.swap.p':'El botón azul <strong>Swap</strong> visible en la Tienda está reservado para la moneda token nativa del juego. Esta función está intencionalmente en espera — requiere una reflexión profunda sobre la <strong>tokenómica</strong> antes de activarse.',
+    's4.swap.warn':"<strong>Filosofía fundacional — Block'N Dice:</strong><br>El objetivo <em>no</em> es crear un sistema especulativo o un crash game. La tokenómica planificada se basa en un equilibrio <strong>33 / 33 / 33</strong>: un tercio para los jugadores, un tercio para el creador-desarrollador, un tercio para la infraestructura del juego. Fundamentos de Block'N Dice: <strong>entretenimiento primero, ganancias reales para el jugador después.</strong>",
+    's5.h2':'Consejos para progresar','s5.h3.start':'Empezar bien','s5.start.list':'<li><strong>Ritmo constante</strong> el error clásico es saltar demasiado rápido o lento. Aprende a pulsar a un ritmo regular — el pájaro debe estar siempre descendiendo ligeramente al acercarse a la abertura.</li><li><strong>Apunta al centro de la abertura</strong> las tuberías tienen una abertura de 130 px. Pasa siempre por el centro para maximizar tu margen de error.</li><li><strong>Anticipa, no reacciones</strong> en cuanto una tubería entre en el campo visual, evalúa si debes subir o bajar. Salta un instante antes para que el impulso se haya disipado parcialmente al pasar.</li><li><strong>El techo también te mata</strong> muchos jugadores olvidan el techo. Un salto demasiado pronto puede enviar al pájaro fuera de la pantalla por arriba.</li>',
+    's5.h3.coins':'Optimizar tus monedas','s5.coins.list':'<li><strong>Seguir la puntuación actual</strong> la moneda emite un sonido diferente cuando tu puntuación supera tu récord actual. Usa este feedback de audio sin mirar el contador.</li><li><strong>Comprar en orden de prioridad</strong> empieza por los artículos baratos (skin Verde a 10) luego apunta a los trails (Nube a 30) que mejoran la legibilidad de la trayectoria.</li><li><strong>Trick Toupie para principiantes</strong> el planeador al mantener (Toupie) permite descender lentamente entre tuberías, dando más tiempo para apuntar.</li>',
+    's5.h3.tricks':'Usar los tricks en competición','s5.tricks.table':'<tr><th>Situación</th><th>Trick recomendado</th><th>Por qué</th></tr><tr><td>Tubería con abertura muy baja</td><td>Toupie (mantener)</td><td>Descenso controlado en lugar de caída acelerada</td></tr><tr><td>Tuberías cercanas</td><td>Pirouette (Looping)</td><td>Mantener permite quedarse en el aire y dosificar la altitud</td></tr><tr><td>Estilo y riesgo</td><td>Firework / Anillo</td><td>Efectos visuales — ningún impacto en la física</td></tr>',
+    's5.warn.looping':'<strong>La Pirouette (Looping) es el trick más difícil de dominar:</strong> el vuelo continuo al mantener puede hacer subir al pájaro muy rápidamente y lanzarlo contra el techo. Reservarlo para jugadores con buen control del ritmo.',
+    's5.h3.comfort':'Ajustes de comodidad','s5.comfort.list':'<li><strong>Pantalla completa:</strong> actívala con el botón ⛶ (escritorio) para eliminar distracciones.</li><li><strong>Móvil:</strong> añade el juego a la pantalla de inicio en Safari → compartir → "Añadir a pantalla de inicio".</li><li><strong>Volumen:</strong> el volumen maestro es ajustable desde la Tienda (icono de sonido arriba a la derecha) y se guarda entre sesiones.</li>'
+  }
+};
+
+function setLang(lang) {
+  if (!T[lang]) return;
+  const t = T[lang];
+  document.title = {fr:'Flappy World — Comment jouer', en:'Flappy World — How to Play', es:'Flappy World — Cómo Jugar'}[lang];
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const v = t[el.dataset.i18n];
+    if (v !== undefined) el.innerHTML = v;
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const v = t[el.dataset.i18nHtml];
+    if (v !== undefined) el.innerHTML = v;
+  });
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    const active = btn.dataset.lang === lang;
+    btn.classList.toggle('lang-active', active);
+    btn.classList.toggle('lang-soon', !active);
+  });
+}
+</script>
+</body>
+</html>

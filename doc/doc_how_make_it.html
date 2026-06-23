@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <title>Flappy World — Documentation Technique</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-16 -14 36 30'%3E%3Cg transform='rotate(-20)'%3E%3Crect x='-13' y='-11' width='26' height='22' fill='%23f5d600'/%3E%3Crect x='-9' y='3' width='16' height='6' fill='%23fff3a0'/%3E%3Crect x='-13' y='0' width='10' height='7' fill='%23d4a800'/%3E%3Crect x='3' y='-8' width='9' height='9' fill='%23fff'/%3E%3Crect x='7' y='-5' width='4' height='4' fill='%23111'/%3E%3Crect x='11' y='-3' width='9' height='5' fill='%23ff8800'/%3E%3Crect x='11' y='1' width='9' height='2' fill='%23cc6600'/%3E%3C/g%3E%3C/svg%3E"/>
 <style>
   /* ── Mise en page générale ── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,7 +48,7 @@
     pointer-events: none;
   }
   .cover-tag {
-    font-size: 8pt;
+    font-size: 11pt;
     letter-spacing: 3px;
     text-transform: uppercase;
     color: rgba(255,255,255,0.7);
@@ -83,7 +84,7 @@
     position: absolute;
     bottom: 14mm;
     right: 18mm;
-    font-size: 8pt;
+    font-size: 11pt;
     color: rgba(255,255,255,0.35);
     letter-spacing: 1px;
   }
@@ -203,7 +204,7 @@
     background: var(--dark);
     color: #c5cef0;
     font-family: 'Menlo', 'Courier New', monospace;
-    font-size: 8pt;
+    font-size: 11pt;
     line-height: 1.8;
     padding: 5mm 6mm;
     border-radius: 6px;
@@ -220,7 +221,7 @@
     background: var(--mid);
     color: #fff;
     font-family: 'Menlo', monospace;
-    font-size: 8pt;
+    font-size: 11pt;
     padding: 1px 6px;
     border-radius: 3px;
     margin-right: 2mm;
@@ -279,7 +280,7 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: 1.5mm 3mm;
-    font-size: 8pt;
+    font-size: 11pt;
   }
   .sound-item .sid { font-family: 'Menlo', monospace; color: var(--mid); font-weight: 700; }
   .sound-item .sfile { color: #666; }
@@ -296,7 +297,7 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: 2mm;
-    font-size: 8pt;
+    font-size: 11pt;
     text-align: center;
   }
   .shop-item .sname { font-weight: 700; color: var(--dark); }
@@ -314,6 +315,86 @@
   /* ── localStorage table ── */
   .ls-table th:first-child { width: 30%; }
   .ls-table th:nth-child(2) { width: 18%; }
+
+  /* ── Sommaire ── */
+  .toc-title {
+    font-size: 20pt;
+    font-weight: 900;
+    color: var(--dark);
+    margin-bottom: 8mm;
+    padding-bottom: 3mm;
+    border-bottom: 3px solid var(--accent);
+  }
+  .toc-list { list-style: none; margin: 0; padding: 0; }
+  .toc-list li {
+    display: flex;
+    align-items: center;
+    gap: 3mm;
+    padding: 4mm 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12pt;
+  }
+  .toc-list li:last-child { border-bottom: none; }
+  .toc-num {
+    background: var(--dark);
+    color: var(--accent);
+    font-weight: 900;
+    font-size: 10pt;
+    width: 7mm; height: 7mm;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .toc-label { font-weight: 700; color: var(--dark); flex: 1; }
+  .toc-page { font-size: 9pt; color: #888; white-space: nowrap; }
+  .toc-page strong { color: var(--mid); font-size: 11pt; }
+
+  /* ── Sélecteur de langue ── */
+  .lang-switcher {
+    position: fixed;
+    bottom: 10mm;
+    right: 10mm;
+    display: flex;
+    gap: 2mm;
+    z-index: 200;
+  }
+  .lang-btn {
+    width: 11mm; height: 11mm;
+    border-radius: 3px;
+    border: 2.5px solid transparent;
+    display: block;
+    cursor: pointer;
+    background: none;
+    padding: 0;
+    overflow: hidden;
+    transition: opacity 0.2s, border-color 0.2s;
+  }
+  .lang-btn svg { display: block; width: 100%; height: 100%; }
+  .lang-active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1.5px var(--dark);
+  }
+  .lang-soon {
+    opacity: 0.4;
+    cursor: pointer;
+    filter: grayscale(40%);
+  }
+
+  /* ── Numéro de page ── */
+  body { counter-reset: pagenum 1; }
+  .page:not(.cover) { counter-increment: pagenum; }
+  .page:not(.cover)::after {
+    content: counter(pagenum);
+    position: absolute;
+    bottom: 6mm;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11pt;
+    color: #aaa;
+    letter-spacing: 1px;
+  }
 
   /* ── Impression ── */
   @media print {
@@ -407,29 +488,45 @@
       <rect x="11" y="1" width="9" height="2" fill="#cc6600"/>
     </g>
   </svg>
-  <div class="cover-tag">Documentation Technique</div>
+  <div class="cover-tag" data-i18n="cover.tag">Documentation Technique</div>
   <h1>Flappy World</h1>
-  <h2>Architecture & Cycle de jeu</h2>
+  <h2 data-i18n="cover.h2">Architecture &amp; Cycle de jeu</h2>
   <div class="cover-divider"></div>
-  <div class="cover-meta">
-    <strong>Version courante</strong> v0.19.1<br>
+  <div class="cover-meta" data-i18n-html="cover.meta">
+    <strong>Version courante</strong> v0.19.3<br>
     <strong>Dépôt</strong> github.com/blockndice/flappyWorld<br>
     <strong>Branche</strong> main<br>
     <strong>Technologie</strong> Vanilla JS · Canvas 2D · HTML5 Audio<br>
     <strong>Résolution interne</strong> 400 × 600 px<br>
     <strong>Date</strong> Juin 2026
   </div>
-  <div class="cover-version">v0.19.1</div>
+  <div class="cover-version">v0.19.3</div>
 </div>
 
 
 <!-- ══════════════════════════════════════
-     PAGE 2 — STRUCTURE DES FICHIERS
+     PAGE 2 — SOMMAIRE
 ══════════════════════════════════════ -->
 <div class="page">
-  <div class="section-header"><div class="num">1</div><h2>Structure des fichiers</h2></div>
+  <div class="toc-title" data-i18n="toc.title">Sommaire</div>
+  <ul class="toc-list">
+    <li><span class="toc-num">1</span><span class="toc-label" data-i18n="toc.1">Structure des fichiers</span><span class="toc-page">page <strong>3</strong></span></li>
+    <li><span class="toc-num">2</span><span class="toc-label" data-i18n="toc.2">Machine d'états du jeu</span><span class="toc-page">page <strong>4</strong></span></li>
+    <li><span class="toc-num">3</span><span class="toc-label" data-i18n="toc.3">Physique &amp; Boucle principale</span><span class="toc-page">page <strong>5</strong></span></li>
+    <li><span class="toc-num">4</span><span class="toc-label" data-i18n="toc.4">Système audio</span><span class="toc-page">page <strong>6</strong></span></li>
+    <li><span class="toc-num">5</span><span class="toc-label" data-i18n="toc.5">Shop &amp; Articles</span><span class="toc-page">page <strong>7</strong></span></li>
+    <li><span class="toc-num">6</span><span class="toc-label" data-i18n="toc.6">Persistance &amp; Responsive</span><span class="toc-page">page <strong>8</strong></span></li>
+  </ul>
+</div>
 
-  <h3>Arborescence du projet</h3>
+
+<!-- ══════════════════════════════════════
+     PAGE 3 — STRUCTURE DES FICHIERS
+══════════════════════════════════════ -->
+<div class="page">
+  <div class="section-header"><div class="num">1</div><h2 data-i18n="s1.h2">Structure des fichiers</h2></div>
+
+  <h3 data-i18n="s1.h3.tree">Arborescence du projet</h3>
   <pre>flappySol/
 ├── index.html               <span class="cmt"># Point d'entrée — charge les 3 scripts dans l'ordre</span>
 ├── asset/
@@ -443,9 +540,9 @@
 │   └── img/                 <span class="cmt"># Images OG / icônes</span>
 └── doc_technique.html       <span class="cmt"># Ce document</span></pre>
 
-  <div class="note">Les scripts sont chargés dans l'ordre : <code>sound.js</code> → <code>shop.js</code> → <code>game.js</code>. Chaque fichier expose ses fonctions au scope global ; <code>game.js</code> les consomme.</div>
+  <div class="note" data-i18n-html="s1.note">Les scripts sont chargés dans l'ordre : <code>sound.js</code> → <code>shop.js</code> → <code>game.js</code>. Chaque fichier expose ses fonctions au scope global ; <code>game.js</code> les consomme.</div>
 
-  <h3>Rôle de chaque fichier JS</h3>
+  <h3 data-i18n="s1.h3.roles">Rôle de chaque fichier JS</h3>
   <table>
     <tr><th>Fichier</th><th>Lignes</th><th>Responsabilité</th></tr>
     <tr><td><span class="file-badge">sound.js</span></td><td>172</td><td>Déclaration des 16 sons, moteur de chargement avec timeout secours 5 s, volume maître, déverrouillage AudioContext mobile, chaînage musiques (startRun → travelMusic → dead → resumeMusic).</td></tr>
@@ -453,7 +550,7 @@
     <tr><td><span class="file-badge">game.js</span></td><td>1 719</td><td>Constantes physiques, machine d'états, boucle <code>loop()</code>, <code>update()</code>, <code>render()</code>, sprites pixel-art, UI pop-up (score / leaderboard / try-again), responsive scaling, favicon dynamique, persistance localStorage.</td></tr>
   </table>
 
-  <h3>Ordre d'exécution au démarrage</h3>
+  <h3 data-i18n="s1.h3.order">Ordre d'exécution au démarrage</h3>
   <pre><span class="cmt">1. sound.js  — crée les Audio(), lance le chargement, installe _unlockAudio</span>
 <span class="cmt">2. shop.js   — définit SHOP_ITEMS, relit localStorage (équipements, pièces)</span>
 <span class="cmt">3. game.js   — relit localStorage (scores, version), setFavicon(), init(), loop()</span>
@@ -467,9 +564,9 @@
      PAGE 3 — MACHINE D'ÉTATS
 ══════════════════════════════════════ -->
 <div class="page">
-  <div class="section-header"><div class="num">2</div><h2>Machine d'états du jeu</h2></div>
+  <div class="section-header"><div class="num">2</div><h2 data-i18n="s2.h2">Machine d'états du jeu</h2></div>
 
-  <h3>Diagramme de flux</h3>
+  <h3 data-i18n="s2.h3.diagram">Diagramme de flux</h3>
   <div class="diagram"><span class="accent">╔══════════════════════════════════════════════════════════════╗
 ║                        CYCLE DE JEU                         ║
 ╚══════════════════════════════════════════════════════════════╝</span>
@@ -496,7 +593,7 @@
       <span class="dim">No (→ init())</span> <span class="arrow">◄──────────────────────┘</span>  <span class="dim">Yes → countdown</span>
 </div>
 
-  <h3>Les 6 états en détail</h3>
+  <h3 data-i18n="s2.h3.states">Les 6 états en détail</h3>
   <div class="state-grid">
     <div class="state-card">
       <div class="state-name">intro1</div>
@@ -524,7 +621,7 @@
     </div>
   </div>
 
-  <h3>Sous-pages de <code>intro1</code></h3>
+  <h3 data-i18n-html="s2.h3.subpages">Sous-pages de <code>intro1</code></h3>
   <table>
     <tr><th>intro1Page</th><th>Contenu affiché</th><th>Transition</th></tr>
     <tr><td><code>1</code></td><td>Message "Clic / Espace / Toucher" — attend <code>soundsReady</code></td><td>Clic → page 2</td></tr>
@@ -539,9 +636,9 @@
      PAGE 4 — PHYSIQUE & BOUCLE
 ══════════════════════════════════════ -->
 <div class="page">
-  <div class="section-header"><div class="num">3</div><h2>Physique & Boucle principale</h2></div>
+  <div class="section-header"><div class="num">3</div><h2 data-i18n="s3.h2">Physique &amp; Boucle principale</h2></div>
 
-  <h3>Constantes physiques</h3>
+  <h3 data-i18n="s3.h3.consts">Constantes physiques</h3>
   <table>
     <tr><th>Constante</th><th>Valeur</th><th>Rôle</th></tr>
     <tr><td><code>GRAVITY</code></td><td>0.38</td><td>Accélération vers le bas par frame</td></tr>
@@ -555,7 +652,7 @@
     <tr><td><code>GLIDE_DAMP</code></td><td>0.12</td><td>Amortissement (lerp) vers la vitesse cible</td></tr>
   </table>
 
-  <h3>Boucle principale</h3>
+  <h3 data-i18n="s3.h3.loop">Boucle principale</h3>
   <pre><span class="kw">function</span> <span class="fn">loop</span>() {
   coinTick++;              <span class="cmt">// anime la pièce (rotation cosinus)</span>
   <span class="cmt">// défilement des nuages (hors dead/score)</span>
@@ -564,7 +661,7 @@
   requestAnimationFrame(<span class="fn">loop</span>);
 }</pre>
 
-  <h3>Ordre de rendu dans <code>render()</code></h3>
+  <h3 data-i18n-html="s3.h3.render">Ordre de rendu dans <code>render()</code></h3>
   <ol>
     <li>Shake d'écran si <code>dead</code> frame 1–10 (translate aléatoire)</li>
     <li><code>sprBg()</code> — ciel dégradé + soleil + nuages</li>
@@ -576,7 +673,7 @@
     <li><code>drawUI()</code> — HUD, pop-ups, menus selon l'état</li>
   </ol>
 
-  <h3>Tricks disponibles</h3>
+  <h3 data-i18n="s3.h3.tricks">Tricks disponibles</h3>
   <table>
     <tr><th>Trick</th><th>Déclencheur</th><th>Comportement</th></tr>
     <tr><td><code>toupie</code></td><td>Tous les 3 sauts</td><td>Flip vertical + maintien bouton = planeur (vy → 0.3 par lerp)</td></tr>
@@ -589,9 +686,9 @@
      PAGE 5 — SYSTÈME AUDIO
 ══════════════════════════════════════ -->
 <div class="page">
-  <div class="section-header"><div class="num">4</div><h2>Système audio</h2></div>
+  <div class="section-header"><div class="num">4</div><h2 data-i18n="s4.h2">Système audio</h2></div>
 
-  <h3>Catalogue des sons</h3>
+  <h3 data-i18n="s4.h3.catalog">Catalogue des sons</h3>
   <div class="sound-list">
     <div class="sound-item"><span class="sid">jump</span><br><span class="sfile">jump02.mp3 · vol 0.3 · overlap</span></div>
     <div class="sound-item"><span class="sid">jumpPet</span><br><span class="sfile">pet01.mp3 · vol 0.7 · overlap</span></div>
@@ -611,7 +708,7 @@
     <div class="sound-item"><span class="sid">evilLaught</span><br><span class="sfile">evilLaught.mp3 · vol 0.9</span></div>
   </div>
 
-  <h3>Chaînage des musiques</h3>
+  <h3 data-i18n="s4.h3.chain">Chaînage des musiques</h3>
   <div class="diagram">  <span class="accent">intro1</span>  <span class="arrow">───►</span>  introMusic (loop)
 
   <span class="accent">Free Run cliqué</span>  <span class="arrow">───►</span>  stopIntroMusic  <span class="arrow">───►</span>  startRun
@@ -632,7 +729,7 @@
 
   <span class="accent">Yes / init()</span>  <span class="arrow">───►</span>  stopResumeMusic  <span class="arrow">───►</span>  startRun  <span class="arrow">───►</span> …</div>
 
-  <h3>Stratégies de lecture</h3>
+  <h3 data-i18n="s4.h3.strategies">Stratégies de lecture</h3>
   <table>
     <tr><th>Cas</th><th>Mécanisme</th></tr>
     <tr><td>Sons ponctuels superposables (<code>overlap: true</code>)</td><td><code>cloneNode()</code> → lecture parallèle possible (ex : saut rapide)</td></tr>
@@ -648,9 +745,9 @@
      PAGE 6 — SHOP & ARTICLES
 ══════════════════════════════════════ -->
 <div class="page">
-  <div class="section-header"><div class="num">5</div><h2>Shop & Articles</h2></div>
+  <div class="section-header"><div class="num">5</div><h2 data-i18n="s5.h2">Shop &amp; Articles</h2></div>
 
-  <h3>Catalogue (17 articles)</h3>
+  <h3 data-i18n="s5.h3.catalog">Catalogue (17 articles)</h3>
   <div class="shop-grid">
     <div class="shop-item"><div class="sname">Vert</div><div class="sprice">10 🪙</div><div class="stype">skin</div></div>
     <div class="shop-item"><div class="sname">Rouge</div><div class="sprice">15 🪙</div><div class="stype">skin</div></div>
@@ -671,7 +768,7 @@
     <div class="shop-item"><div class="sname">Pet</div><div class="sprice">20 🪙</div><div class="stype">sndJump</div></div>
   </div>
 
-  <h3>Types d'articles</h3>
+  <h3 data-i18n="s5.h3.types">Types d'articles</h3>
   <table>
     <tr><th>Type</th><th>Slot actif</th><th>Effet</th></tr>
     <tr><td><code>skin</code></td><td><code>playerPal</code></td><td>Couleur de l'oiseau. Spéciaux : Phosphor (pal 98, animation HSL), Multicolor (pal 99, lerp entre 7 couleurs)</td></tr>
@@ -681,7 +778,7 @@
     <tr><td><code>sndJump</code></td><td><code>activeJumpSnd</code></td><td>Son alternatif au saut (Pet remplace aussi le deadMusic par deadPet)</td></tr>
   </table>
 
-  <h3>Flux achat / preview</h3>
+  <h3 data-i18n="s5.h3.flux">Flux achat / preview</h3>
   <pre><span class="cmt">Clic carte → setPreview(item)   [intro1Page = 4, affiche preview]</span>
   <span class="cmt">→ Bouton Acheter → shopConfirm = true</span>
     <span class="cmt">→ Confirmer → item.buy = true, totalCoins -= price, equip automatique</span>
@@ -695,9 +792,9 @@
      PAGE 7 — PERSISTANCE & RESPONSIVE
 ══════════════════════════════════════ -->
 <div class="page">
-  <div class="section-header"><div class="num">6</div><h2>Persistance & Responsive</h2></div>
+  <div class="section-header"><div class="num">6</div><h2 data-i18n="s6.h2">Persistance &amp; Responsive</h2></div>
 
-  <h3>Clés localStorage</h3>
+  <h3 data-i18n="s6.h3.ls">Clés localStorage</h3>
   <table class="ls-table">
     <tr><th>Clé</th><th>Type</th><th>Contenu</th></tr>
     <tr><td><code>fw_ver</code></td><td>String</td><td>Version du format de sauvegarde (actuellement <code>'4'</code>). Si différente, efface <code>fw_top</code> et <code>fw_best</code>.</td></tr>
@@ -709,7 +806,7 @@
     <tr><td><code>fw_vol</code></td><td>Float 0–1</td><td>Volume maître, appliqué à tous les sons au chargement.</td></tr>
   </table>
 
-  <h3>Responsive scaling</h3>
+  <h3 data-i18n="s6.h3.scale">Responsive scaling</h3>
   <pre><span class="kw">function</span> <span class="fn">updateScale</span>() {
   <span class="kw">const</span> mobile = window.<span class="fn">matchMedia</span>(<span class="str">'(pointer: coarse)'</span>).matches;
   <span class="kw">if</span> (mobile) {
@@ -734,7 +831,7 @@
     <tr><td>Tablette portrait</td><td><code>vh/H</code></td><td>Remplit la hauteur (largeur canvas ≤ vp width)</td></tr>
   </table>
 
-  <h3>Coords écran → canvas (<code>canvasPos</code>)</h3>
+  <h3 data-i18n-html="s6.h3.coords">Coords écran → canvas (<code>canvasPos</code>)</h3>
   <pre><span class="kw">function</span> <span class="fn">canvasPos</span>(clientX, clientY) {
   <span class="kw">const</span> r = canvas.<span class="fn">getBoundingClientRect</span>(); <span class="cmt">// rect visuel après CSS transform</span>
   <span class="kw">return</span> [(clientX - r.left) * W / r.width,
@@ -742,7 +839,7 @@
 }
 <span class="cmt">// Fonctionne quelle que soit l'échelle CSS ou le transform appliqué</span></pre>
 
-  <h3>Plein écran</h3>
+  <h3 data-i18n="s6.h3.fullscreen">Plein écran</h3>
   <ul>
     <li><strong>Desktop/tablette</strong> : bouton <code>#fsBtn</code> → <code>requestFullscreen()</code> / <code>exitFullscreen()</code> avec préfixe webkit</li>
     <li><strong>iOS</strong> : ne supporte pas l'API Fullscreen — couvert par les meta PWA (<code>apple-mobile-web-app-capable</code>) pour le mode "ajout à l'écran d'accueil"</li>
@@ -750,5 +847,80 @@
   </ul>
 </div>
 
+<div class="lang-switcher">
+  <button class="lang-btn lang-active" data-lang="fr" onclick="setLang('fr')" title="Français">
+    <svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><rect x="0" y="0" width="10" height="30" fill="#002395"/><rect x="10" y="0" width="10" height="30" fill="#fff"/><rect x="20" y="0" width="10" height="30" fill="#ED2939"/></svg>
+  </button>
+  <button class="lang-btn lang-soon" data-lang="en" onclick="setLang('en')" title="English">
+    <svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><rect width="30" height="30" fill="#012169"/><line x1="0" y1="0" x2="30" y2="30" stroke="#fff" stroke-width="4"/><line x1="30" y1="0" x2="0" y2="30" stroke="#fff" stroke-width="4"/><line x1="0" y1="0" x2="30" y2="30" stroke="#C8102E" stroke-width="2.5"/><line x1="30" y1="0" x2="0" y2="30" stroke="#C8102E" stroke-width="2.5"/><rect x="12" y="0" width="6" height="30" fill="#fff"/><rect x="0" y="12" width="30" height="6" fill="#fff"/><rect x="13" y="0" width="4" height="30" fill="#C8102E"/><rect x="0" y="13" width="30" height="4" fill="#C8102E"/></svg>
+  </button>
+  <button class="lang-btn lang-soon" data-lang="es" onclick="setLang('es')" title="Español">
+    <svg viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><rect x="0" y="0" width="30" height="8" fill="#c60b1e"/><rect x="0" y="8" width="30" height="14" fill="#ffc400"/><rect x="0" y="22" width="30" height="8" fill="#c60b1e"/></svg>
+  </button>
+</div>
+
+<script>
+const T = {
+  fr: {
+    'cover.tag':'Documentation Technique','cover.h2':'Architecture &amp; Cycle de jeu',
+    'cover.meta':'<strong>Version courante</strong> v0.19.3<br><strong>Dépôt</strong> github.com/blockndice/flappyWorld<br><strong>Branche</strong> main<br><strong>Technologie</strong> Vanilla JS · Canvas 2D · HTML5 Audio<br><strong>Résolution interne</strong> 400 × 600 px<br><strong>Date</strong> Juin 2026',
+    'toc.title':'Sommaire','toc.1':'Structure des fichiers','toc.2':"Machine d'états du jeu",'toc.3':'Physique &amp; Boucle principale','toc.4':'Système audio','toc.5':'Shop &amp; Articles','toc.6':'Persistance &amp; Responsive',
+    's1.h2':'Structure des fichiers','s1.h3.tree':'Arborescence du projet',
+    's1.note':'Les scripts sont chargés dans l\'ordre : <code>sound.js</code> → <code>shop.js</code> → <code>game.js</code>. Chaque fichier expose ses fonctions au scope global ; <code>game.js</code> les consomme.',
+    's1.h3.roles':'Rôle de chaque fichier JS','s1.h3.order':"Ordre d'exécution au démarrage",
+    's2.h2':"Machine d'états du jeu",'s2.h3.diagram':'Diagramme de flux','s2.h3.states':'Les 6 états en détail','s2.h3.subpages':'Sous-pages de <code>intro1</code>',
+    's3.h2':'Physique &amp; Boucle principale','s3.h3.consts':'Constantes physiques','s3.h3.loop':'Boucle principale','s3.h3.render':'Ordre de rendu dans <code>render()</code>','s3.h3.tricks':'Tricks disponibles',
+    's4.h2':'Système audio','s4.h3.catalog':'Catalogue des sons','s4.h3.chain':'Chaînage des musiques','s4.h3.strategies':'Stratégies de lecture',
+    's5.h2':'Shop &amp; Articles','s5.h3.catalog':'Catalogue (17 articles)','s5.h3.types':"Types d'articles",'s5.h3.flux':'Flux achat / preview',
+    's6.h2':'Persistance &amp; Responsive','s6.h3.ls':'Clés localStorage','s6.h3.scale':'Responsive scaling','s6.h3.coords':'Coords écran → canvas (<code>canvasPos</code>)','s6.h3.fullscreen':'Plein écran'
+  },
+  en: {
+    'cover.tag':'Technical Documentation','cover.h2':'Architecture &amp; Game Loop',
+    'cover.meta':'<strong>Current version</strong> v0.19.3<br><strong>Repository</strong> github.com/blockndice/flappyWorld<br><strong>Branch</strong> main<br><strong>Technology</strong> Vanilla JS · Canvas 2D · HTML5 Audio<br><strong>Internal resolution</strong> 400 × 600 px<br><strong>Date</strong> June 2026',
+    'toc.title':'Contents','toc.1':'File structure','toc.2':'Game state machine','toc.3':'Physics &amp; Main loop','toc.4':'Audio system','toc.5':'Shop &amp; Items','toc.6':'Persistence &amp; Responsive',
+    's1.h2':'File structure','s1.h3.tree':'Project tree',
+    's1.note':'Scripts are loaded in order: <code>sound.js</code> → <code>shop.js</code> → <code>game.js</code>. Each file exposes its functions to the global scope; <code>game.js</code> consumes them.',
+    's1.h3.roles':'Role of each JS file','s1.h3.order':'Startup execution order',
+    's2.h2':'Game state machine','s2.h3.diagram':'Flow diagram','s2.h3.states':'The 6 states in detail','s2.h3.subpages':'Sub-pages of <code>intro1</code>',
+    's3.h2':'Physics &amp; Main loop','s3.h3.consts':'Physics constants','s3.h3.loop':'Main loop','s3.h3.render':'Render order in <code>render()</code>','s3.h3.tricks':'Available tricks',
+    's4.h2':'Audio system','s4.h3.catalog':'Sound catalogue','s4.h3.chain':'Music chaining','s4.h3.strategies':'Playback strategies',
+    's5.h2':'Shop &amp; Items','s5.h3.catalog':'Catalogue (17 items)','s5.h3.types':'Item types','s5.h3.flux':'Buy / preview flow',
+    's6.h2':'Persistence &amp; Responsive','s6.h3.ls':'localStorage keys','s6.h3.scale':'Responsive scaling','s6.h3.coords':'Screen → canvas coords (<code>canvasPos</code>)','s6.h3.fullscreen':'Fullscreen'
+  },
+  es: {
+    'cover.tag':'Documentación Técnica','cover.h2':'Arquitectura &amp; Ciclo de juego',
+    'cover.meta':'<strong>Versión actual</strong> v0.19.3<br><strong>Repositorio</strong> github.com/blockndice/flappyWorld<br><strong>Rama</strong> main<br><strong>Tecnología</strong> Vanilla JS · Canvas 2D · HTML5 Audio<br><strong>Resolución interna</strong> 400 × 600 px<br><strong>Fecha</strong> Junio 2026',
+    'toc.title':'Índice','toc.1':'Estructura de archivos','toc.2':'Máquina de estados','toc.3':'Física &amp; Bucle principal','toc.4':'Sistema de audio','toc.5':'Tienda &amp; Artículos','toc.6':'Persistencia &amp; Responsive',
+    's1.h2':'Estructura de archivos','s1.h3.tree':'Árbol del proyecto',
+    's1.note':'Los scripts se cargan en orden: <code>sound.js</code> → <code>shop.js</code> → <code>game.js</code>. Cada archivo expone sus funciones al scope global; <code>game.js</code> las consume.',
+    's1.h3.roles':'Rol de cada archivo JS','s1.h3.order':'Orden de ejecución al arrancar',
+    's2.h2':'Máquina de estados del juego','s2.h3.diagram':'Diagrama de flujo','s2.h3.states':'Los 6 estados en detalle','s2.h3.subpages':'Sub-páginas de <code>intro1</code>',
+    's3.h2':'Física &amp; Bucle principal','s3.h3.consts':'Constantes físicas','s3.h3.loop':'Bucle principal','s3.h3.render':'Orden de renderizado en <code>render()</code>','s3.h3.tricks':'Tricks disponibles',
+    's4.h2':'Sistema de audio','s4.h3.catalog':'Catálogo de sonidos','s4.h3.chain':'Encadenamiento de músicas','s4.h3.strategies':'Estrategias de reproducción',
+    's5.h2':'Tienda &amp; Artículos','s5.h3.catalog':'Catálogo (17 artículos)','s5.h3.types':'Tipos de artículos','s5.h3.flux':'Flujo compra / preview',
+    's6.h2':'Persistencia &amp; Responsive','s6.h3.ls':'Claves localStorage','s6.h3.scale':'Escalado responsive','s6.h3.coords':'Coords pantalla → canvas (<code>canvasPos</code>)','s6.h3.fullscreen':'Pantalla completa'
+  }
+};
+
+function setLang(lang) {
+  if (!T[lang]) return;
+  const t = T[lang];
+  document.title = {fr:'Flappy World — Documentation Technique', en:'Flappy World — Technical Documentation', es:'Flappy World — Documentación Técnica'}[lang];
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const v = t[el.dataset.i18n];
+    if (v !== undefined) el.innerHTML = v;
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const v = t[el.dataset.i18nHtml];
+    if (v !== undefined) el.innerHTML = v;
+  });
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    const active = btn.dataset.lang === lang;
+    btn.classList.toggle('lang-active', active);
+    btn.classList.toggle('lang-soon', !active);
+  });
+}
+</script>
 </body>
 </html>
