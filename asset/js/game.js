@@ -8,7 +8,7 @@ const W          = 400;
 const H          = 600;
 const GROUND_H   = 80;
 const GRAVITY       = 0.38;
-const FLAP_VY       = -7.6;
+const FLAP_VY       = -7.2;
 const FLOAT_FRAMES  = 14;   // frames de gravity réduite après un saut (maintien bouton)
 const FLOAT_GRAVITY = 0.10; // gravity appliquée pendant le float
 const GLIDE_TARGET_VY = 0.3;  // vitesse cible descente toupie planeur
@@ -1231,7 +1231,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.19.3', W/2, H - 14);
+      ctx.fillText('v0.19.4', W/2, H - 14);
     }
   }
 

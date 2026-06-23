@@ -50,6 +50,7 @@ v0.19.0 = article skin Phosphor (animation couleur fluide) + article skin Multic
 v0.19.1 = [HOTFIX] chargement bloqué si un son n'émet ni canplaythrough ni error (timeout secours 5s)
 v0.19.2 = Doc technique 
 v0.19.3 = amélioration et traduction documention
+v0.19.4 = revert physique oiseau
 
 ** next step **
 idée de level DA
