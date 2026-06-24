@@ -68,7 +68,6 @@ let bgClouds = [];
 let totalCoins = 0;
 let totalGems  = 0;
 let shopZoom = 1;
-let shopPanX = 0;
 let shopPanY = 0;
 let shopPage         = 0;
 let shopView         = 'shop'; // 'shop' | 'token'
@@ -435,8 +434,8 @@ function update() {
     deadFrame++;
     if (deadFrame >= 21) {
       if (deadFrame === 21) { bird.vy = -(3 + Math.random() * 13); bird.vx = (Math.random() - 0.5) * 14; _impactX = bird.x; _impactY = bird.y; _impactBaseAngle = Math.random() * Math.PI * 2; }
-      const _impactIdx = [21, 31, 41, 51, 61].indexOf(deadFrame);
-      if (_impactIdx >= 0) { jumpSpawn(_impactX, _impactY, 1, true, _impactBaseAngle + (_impactIdx / 5) * Math.PI * 2); }
+      const _ii = [21, 31, 41, 51, 61].indexOf(deadFrame);
+      if (_ii >= 0) { jumpSpawn(_impactX, _impactY, 1, true, _impactBaseAngle + (_ii / 5) * Math.PI * 2); }
       bird.vy    += GRAVITY;
       bird.y     += bird.vy;
       bird.x     += bird.vx;
@@ -1291,7 +1290,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.19.6', W/2, H - 14);
+      ctx.fillText('v0.20.0', W/2, H - 14);
     }
   }
 
@@ -1470,10 +1469,10 @@ function render() {
   }
 
   // zoom + pan de scène intro1 (UI dessinée après, sans transform)
-  const doZoom = state === 'intro1' && (shopZoom !== 1 || shopPanX !== 0 || shopPanY !== 0);
+  const doZoom = state === 'intro1' && (shopZoom !== 1 || shopPanY !== 0);
   if (doZoom) {
     ctx.save();
-    ctx.translate(W / 2 + shopPanX, H / 2 + shopPanY);
+    ctx.translate(W / 2, H / 2 + shopPanY);
     ctx.scale(shopZoom, shopZoom);
     ctx.translate(-W / 2, -H / 2);
   }
@@ -1554,7 +1553,7 @@ function handlePageBtn(cx, cy) {
       if (hitBtn(cx, cy, btn)) {
         if (btn.action === 'freerun')    { stopIntroMusic(); playSound('startRun'); state = 'intro2'; intro2Frame = 0; trailParticles.length = 0; jumpEffects.length = 0; trickEffects.length = 0; loopingFrame = 0; toupieFrame = 0; jumpCount = 0; }
         if (btn.action === 'historique') { intro1Page = 3; }
-        if (btn.action === 'shop')       { intro1Page = 4; shopZoom = 2; shopPanX = 0; shopPanY = 54; shopPage = 0; shopView = 'shop'; }
+        if (btn.action === 'shop')       { intro1Page = 4; shopZoom = 2; shopPanY = 54; shopPage = 0; shopView = 'shop'; }
         return true;
       }
     }
@@ -1587,7 +1586,7 @@ function handlePageBtn(cx, cy) {
     if (shopView === 'shop' && hitBtn(cx, cy, BTN_SHOP_GEMS)) { shopView = 'token'; selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
     if (shopView === 'token') { if (hitBtn(cx, cy, BTN_TOKEN_SHOP)) { shopView = 'shop'; } return true; }
     // ── vue grille ──
-    if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; selectedShopItem = null; shopConfirm = false; shopView = 'shop'; clearPreview(); return true; }
+    if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanY = 0; selectedShopItem = null; shopConfirm = false; shopView = 'shop'; clearPreview(); return true; }
     if (selectedShopItem && hitBtn(cx, cy, BTN_SHOP_BUY)) {
       if (!selectedShopItem.buy)        shopConfirm = true;
       else if (selectedShopItem.equip)  unequipItem(selectedShopItem);
@@ -1614,7 +1613,7 @@ function handlePageBtn(cx, cy) {
   }
   if (state !== 'score' || deadPage !== 3 || deadFrame < 30) return false;
   if (hitBtn(cx, cy, BTN_YES)) { stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; runCount++; playSound('travelMusic'); return true; }
-  if (hitBtn(cx, cy, BTN_NO))  { stopResumeMusic(); init(); playIntroMusic(); return true; }
+  if (hitBtn(cx, cy, BTN_NO))  { stopResumeMusic(); init(); runCount = 0; playIntroMusic(); return true; }
   return true;
 }
 

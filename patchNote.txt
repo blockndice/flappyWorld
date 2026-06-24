@@ -53,6 +53,7 @@ v0.19.3 = amélioration et traduction documention
 v0.19.4 = revert physique oiseau
 v0.19.5 = nombre de run affiché
 v0.19.6 = fenêtre swap
+v0.20.0 = review code + correctif nombre de run reset au retour menu
 
 ** next step **
 idée de level DA -> plage, montagne, automne,
