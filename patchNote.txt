@@ -51,6 +51,7 @@ v0.19.1 = [HOTFIX] chargement bloqué si un son n'émet ni canplaythrough ni err
 v0.19.2 = Doc technique 
 v0.19.3 = amélioration et traduction documention
 v0.19.4 = revert physique oiseau
+v0.19.5 = nombre de run affiché
 
 ** next step **
 idée de level DA

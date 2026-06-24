@@ -76,6 +76,7 @@ let jumpCount        = 0;
 let jumpHeld         = false;
 let jumpHeldFrame    = 0;
 let previewJumpCount = 0;
+let runCount         = 0;
 
 function init() {
   stopResumeMusic();
@@ -292,6 +293,14 @@ function addScore(s) {
   localStorage.setItem('fw_top', JSON.stringify(topScores));
 }
 
+function ordinalSuffix(n) {
+  if (n % 100 >= 11 && n % 100 <= 13) return 'th';
+  if (n % 10 === 1) return 'st';
+  if (n % 10 === 2) return 'nd';
+  if (n % 10 === 3) return 'rd';
+  return 'th';
+}
+
 function die() {
   stopTravelMusic();
   trailParticles.length = 0;
@@ -304,9 +313,9 @@ function die() {
   jumpHeldFrame         = 0;
   addScore(score);
   allowResumeMusic();
-  state     = 'dead';
-  deadFrame = 0;
-  deadPage  = 1;
+  state        = 'dead';
+  deadFrame    = 0;
+  deadPage     = 1;
   playSound('dead');
 }
 
@@ -404,7 +413,7 @@ function update() {
       bird.rot = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
     }
 
-    if (t >= 280) { bird.x = 90; bird.vy = FLAP_VY; state = 'countdown'; countdown = 0; }
+    if (t >= 280) { bird.x = 90; bird.vy = FLAP_VY; state = 'countdown'; countdown = 0; runCount++; }
     return;
   }
 
@@ -1260,6 +1269,20 @@ function drawUI() {
       ctx.font      = 'bold 24px monospace';
       ctx.fillText('GAME OVER', W/2, POP_CY - 46);
 
+      ctx.save();
+      ctx.translate(67, 173);
+      ctx.rotate(-30 * Math.PI / 180);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#ffe033';
+      const _suf  = ordinalSuffix(runCount);
+      ctx.font = 'bold 29px monospace';
+      const _wNum = ctx.measureText(String(runCount)).width;
+      ctx.fillText(runCount, 0, 0);
+      ctx.font = 'bold 16px monospace';
+      ctx.fillText(_suf + ' run', _wNum + 1, -7);
+      ctx.restore();
+      ctx.textAlign = 'center';
+
       // Animation transfert pièces run → total
       const _t   = Math.max(0, Math.min(1, (deadFrame - 25) / 70));
       const _run = Math.round(score * (1 - _t));
@@ -1536,7 +1559,7 @@ function handlePageBtn(cx, cy) {
     return true;
   }
   if (state !== 'score' || deadPage !== 3 || deadFrame < 30) return false;
-  if (hitBtn(cx, cy, BTN_YES)) { stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; playSound('travelMusic'); return true; }
+  if (hitBtn(cx, cy, BTN_YES)) { stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; runCount++; playSound('travelMusic'); return true; }
   if (hitBtn(cx, cy, BTN_NO))  { stopResumeMusic(); init(); playIntroMusic(); return true; }
   return true;
 }
@@ -1579,7 +1602,7 @@ document.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp') {
     e.preventDefault();
     if (state === 'score' && deadPage === 3 && deadFrame >= 30) {
-      stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; playSound('travelMusic'); return;
+      stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; runCount++; playSound('travelMusic'); return;
     }
     if (!e.repeat) { flap(); jumpHeld = true; jumpHeldFrame = 0; }
   }
