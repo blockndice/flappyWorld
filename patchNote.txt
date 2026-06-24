@@ -52,9 +52,10 @@ v0.19.2 = Doc technique
 v0.19.3 = amélioration et traduction documention
 v0.19.4 = revert physique oiseau
 v0.19.5 = nombre de run affiché
+v0.19.6 = fenêtre swap
 
 ** next step **
-idée de level DA
+idée de level DA -> plage, montagne, automne,
 Shop -> 1 page = 1 theme
 profil joueur 
 durant l'intro1, les autres oiseau qui défile sont les profils des autre joueurs avec leur equipement + pseudo

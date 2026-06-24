@@ -37,7 +37,8 @@ const BTN_BACK_SHOP = { x: 16,        y: H - 40,    w: 64, h: 28 };
 const BTN_SHOP_PREV = { x: 136,       y: H - 40,    w: 28, h: 28 };
 const BTN_SHOP_NEXT = { x: 236,       y: H - 40,    w: 28, h: 28 };
 const BTN_SHOP_BUY  = { x: W/2 - 32,  y: 245,       w: 64, h: 28 };
-const BTN_SHOP_GEMS = { x: W - 86,    y: 248,       w: 72, h: 24 };
+const BTN_SHOP_GEMS  = { x: W - 100,   y: 248,       w: 88, h: 24 };
+const BTN_TOKEN_SHOP = { x: 10,        y: 244,       w: 75, h: 26 };
 const CONFIRM_BUY    = { x: W / 2 - 131, y: H - 72, w: 96, h: 44 };
 const CONFIRM_CANCEL = { x: W / 2 + 35,  y: H - 72, w: 96, h: 44 };
 const MENU_BTNS = [
@@ -70,6 +71,7 @@ let shopZoom = 1;
 let shopPanX = 0;
 let shopPanY = 0;
 let shopPage         = 0;
+let shopView         = 'shop'; // 'shop' | 'token'
 let selectedShopItem = null;
 let shopConfirm      = false;
 let jumpCount        = 0;
@@ -827,10 +829,10 @@ function drawGemBtn(popY, mxL) {
   ctx.font = 'bold 10px monospace';
   ctx.fillStyle = '#cceeff';
   ctx.textAlign = 'left';
-  ctx.fillText('SWAP', b.x + 6, midY + 4);
-  sprGemCube(b.x + 44, midY);
+  ctx.fillText('$token', b.x + 4, midY + 4);
+  sprGemCube(b.x + 56, midY);
   ctx.font = 'bold 12px monospace';
-  ctx.fillText(totalGems, b.x + 58, midY + 5);
+  ctx.fillText(totalGems, b.x + 70, midY + 5);
   ctx.textAlign = 'center';
 }
 
@@ -1067,12 +1069,60 @@ function drawUI() {
       ctx.fillStyle = 'rgba(0,0,0,0.55)';
       ctx.fill();
 
+      if (shopView === 'token') {
+        // ── POPUP TOKEN ────────────────────────────────────────
+        // bouton pièces (retour shop) — jaune avec bordure pointillée jaune animée
+        const tsb = BTN_TOKEN_SHOP;
+        const tsBtnHov = hitBtn(popMX, mouseY, tsb);
+        roundRect(tsb.x, tsb.y, tsb.w, tsb.h, 6, tsBtnHov ? 'rgba(255,220,0,0.22)' : 'rgba(255,200,0,0.10)');
+        ctx.save();
+        ctx.setLineDash([6, 4]);
+        ctx.lineDashOffset = -(coinTick * 0.15);
+        ctx.strokeStyle = '#ffe033'; ctx.lineWidth = 1.5;
+        const _tbr = 6;
+        ctx.beginPath();
+        ctx.moveTo(tsb.x + _tbr, tsb.y); ctx.lineTo(tsb.x + tsb.w - _tbr, tsb.y);
+        ctx.arcTo(tsb.x + tsb.w, tsb.y, tsb.x + tsb.w, tsb.y + _tbr, _tbr);
+        ctx.lineTo(tsb.x + tsb.w, tsb.y + tsb.h - _tbr);
+        ctx.arcTo(tsb.x + tsb.w, tsb.y + tsb.h, tsb.x + tsb.w - _tbr, tsb.y + tsb.h, _tbr);
+        ctx.lineTo(tsb.x + _tbr, tsb.y + tsb.h);
+        ctx.arcTo(tsb.x, tsb.y + tsb.h, tsb.x, tsb.y + tsb.h - _tbr, _tbr);
+        ctx.lineTo(tsb.x, tsb.y + _tbr);
+        ctx.arcTo(tsb.x, tsb.y, tsb.x + _tbr, tsb.y, _tbr);
+        ctx.closePath(); ctx.stroke(); ctx.restore();
+        const _tsMidY = tsb.y + tsb.h / 2;
+        sprCoinUI(tsb.x + 12, _tsMidY);
+        ctx.font = 'bold 12px monospace'; ctx.fillStyle = '#ffffff'; ctx.textAlign = 'left';
+        ctx.fillText(totalCoins, tsb.x + 26, _tsMidY + 5);
+        ctx.textAlign = 'center';
+
+        // indicateur $token haut-droite — simple, sans bordure
+        const b = BTN_SHOP_GEMS;
+        roundRect(b.x, b.y, b.w, b.h, 6, 'rgba(0,0,0,0.18)');
+        const _midY = b.y + b.h / 2;
+        ctx.font = 'bold 10px monospace'; ctx.fillStyle = '#cceeff'; ctx.textAlign = 'left';
+        ctx.fillText('$token', b.x + 4, _midY + 4);
+        sprGemCube(b.x + 56, _midY);
+        ctx.font = 'bold 12px monospace'; ctx.fillStyle = '#ffffff';
+        ctx.fillText(totalGems, b.x + 70, _midY + 5);
+        ctx.textAlign = 'center';
+
+        // contenu token
+        ctx.fillStyle = '#aaaacc';
+        ctx.font = '11px monospace';
+        ctx.fillText('Coming soon', W / 2, popY + 130);
+
+        ctx.restore();
+        // ── FIN POPUP TOKEN ────────────────────────────────────
+      } else {
+
       // indicateur pièces haut-gauche du popup
-      sprCoinUI(18, popY + 26);
-      ctx.font = 'bold 13px monospace';
-      ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'left';
-      ctx.fillText(totalCoins, 34, popY + 30);
+      const _ci = BTN_TOKEN_SHOP;
+      roundRect(_ci.x, _ci.y, _ci.w, _ci.h, 6, 'rgba(0,0,0,0.18)');
+      const _ciMidY = _ci.y + _ci.h / 2;
+      sprCoinUI(_ci.x + 12, _ciMidY);
+      ctx.font = 'bold 12px monospace'; ctx.fillStyle = '#ffffff'; ctx.textAlign = 'left';
+      ctx.fillText(totalCoins, _ci.x + 26, _ciMidY + 5);
       ctx.textAlign = 'center';
 
       // bouton gemmes haut-droite du popup
@@ -1235,12 +1285,13 @@ function drawUI() {
         ctx.textAlign = 'center';
       }
       ctx.restore(); // fin X-scale popup mobile
+      } // fin vue shop
     }
 
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.19.4', W/2, H - 14);
+      ctx.fillText('v0.19.6', W/2, H - 14);
     }
   }
 
@@ -1503,7 +1554,7 @@ function handlePageBtn(cx, cy) {
       if (hitBtn(cx, cy, btn)) {
         if (btn.action === 'freerun')    { stopIntroMusic(); playSound('startRun'); state = 'intro2'; intro2Frame = 0; trailParticles.length = 0; jumpEffects.length = 0; trickEffects.length = 0; loopingFrame = 0; toupieFrame = 0; jumpCount = 0; }
         if (btn.action === 'historique') { intro1Page = 3; }
-        if (btn.action === 'shop')       { intro1Page = 4; shopZoom = 2; shopPanX = 0; shopPanY = 54; shopPage = 0; }
+        if (btn.action === 'shop')       { intro1Page = 4; shopZoom = 2; shopPanX = 0; shopPanY = 54; shopPage = 0; shopView = 'shop'; }
         return true;
       }
     }
@@ -1532,8 +1583,11 @@ function handlePageBtn(cx, cy) {
       if (hitBtn(cx, cy, btnCancelC)) { shopConfirm = false; return true; }
       return true;
     }
+    // ── navigation shop ↔ token ──
+    if (shopView === 'shop' && hitBtn(cx, cy, BTN_SHOP_GEMS)) { shopView = 'token'; selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
+    if (shopView === 'token') { if (hitBtn(cx, cy, BTN_TOKEN_SHOP)) { shopView = 'shop'; } return true; }
     // ── vue grille ──
-    if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
+    if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanX = 0; shopPanY = 0; selectedShopItem = null; shopConfirm = false; shopView = 'shop'; clearPreview(); return true; }
     if (selectedShopItem && hitBtn(cx, cy, BTN_SHOP_BUY)) {
       if (!selectedShopItem.buy)        shopConfirm = true;
       else if (selectedShopItem.equip)  unequipItem(selectedShopItem);
