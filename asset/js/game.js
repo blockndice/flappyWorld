@@ -95,7 +95,7 @@ function init() {
   previewJumpCount = 0;
   bgBirds      = [];
   deadFrame    = 0;
-  prevTopScore = topScores[topScores.length - 1] || 0;
+  prevTopScore = topScores[0] || 0;
   intro1Page   = 1;
   bgClouds     = Array.from({ length: 7 }, () => ({
     x:     Math.random() * W,
@@ -112,28 +112,33 @@ function init() {
 //    quand les vrais sprites seront prêts.
 // ─────────────────────────────────────────────
 
+const _SKY_GRAD = ctx.createLinearGradient(0, 0, 0, H - GROUND_H);
+_SKY_GRAD.addColorStop(0, '#1a6fa0');
+_SKY_GRAD.addColorStop(1, '#5ec8f5');
+
+const _SUN_SX = 332, _SUN_SY = 48, _SUN_SR = 11;
+const _SUN_RAYS = Array.from({ length: 8 }, (_, i) => {
+  const a = i * Math.PI / 4;
+  return [Math.cos(a) * (_SUN_SR + 5), Math.sin(a) * (_SUN_SR + 5)];
+});
+
 /** BACKGROUND — ciel dégradé + nuages + soleil */
 function sprBg() {
-  const grad = ctx.createLinearGradient(0, 0, 0, H - GROUND_H);
-  grad.addColorStop(0, '#1a6fa0');
-  grad.addColorStop(1, '#5ec8f5');
-  ctx.fillStyle = grad;
+  ctx.fillStyle = _SKY_GRAD;
   ctx.fillRect(0, 0, W, H - GROUND_H);
-
   drawSun();
   for (const c of bgClouds) pixelCloud(c.x, c.y, c.s, c.shape);
 }
 
 function drawSun() {
-  const sx = 332, sy = 48, sr = 11;
   ctx.fillStyle = '#ffee33';
-  for (let dy = -sr; dy <= sr; dy += 2) {
-    const hw = Math.sqrt(Math.max(0, sr * sr - dy * dy));
-    ctx.fillRect(sx - hw, sy + dy, hw * 2, 2);
+  for (let dy = -_SUN_SR; dy <= _SUN_SR; dy += 2) {
+    const hw = Math.sqrt(Math.max(0, _SUN_SR * _SUN_SR - dy * dy));
+    ctx.fillRect(_SUN_SX - hw, _SUN_SY + dy, hw * 2, 2);
   }
   ctx.fillStyle = '#ffcc00';
-  for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
-    ctx.fillRect(sx + Math.cos(a) * (sr + 5) - 2, sy + Math.sin(a) * (sr + 5) - 2, 3, 3);
+  for (const [rx, ry] of _SUN_RAYS) {
+    ctx.fillRect(_SUN_SX + rx - 2, _SUN_SY + ry - 2, 3, 3);
   }
 }
 
@@ -377,7 +382,7 @@ function update() {
       });
       bgBirds.sort((a, b) => a.scale - b.scale);
     }
-    bgBirds = bgBirds.filter(b => b.x < W + 70);
+    for (let _i = bgBirds.length - 1; _i >= 0; _i--) { if (bgBirds[_i].x >= W + 70) bgBirds.splice(_i, 1); }
     bgBirds.forEach(b => {
       b.x  += b.speed;
       b.vy += GRAVITY;
@@ -504,7 +509,7 @@ function update() {
       }
     }
   }
-  pipes = pipes.filter(p => p.x + PIPE_W + 20 > 0);
+  for (let _i = pipes.length - 1; _i >= 0; _i--) { if (pipes[_i].x + PIPE_W + 20 <= 0) pipes.splice(_i, 1); }
 
   // Collisions
   const margin = 5;
@@ -1049,7 +1054,7 @@ function drawUI() {
 
     } else if (intro1Page === 4) {
       // X-scale mobile uniquement (desktop : popScale=1, sans effet)
-      const _cssW  = canvas.getBoundingClientRect().width || W;
+      const _cssW  = _canvasCssWidth;
       const popScale = Math.min(1, window.innerWidth / _cssW);
       const popLeft  = Math.floor(W * (1 - popScale) / 2);
       const popMX    = popScale < 1 ? (mouseX - popLeft) / popScale : mouseX;
@@ -1292,7 +1297,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.20.1', W/2, H - 14);
+      ctx.fillText('v0.21.0', W/2, H - 14);
     }
   }
 
@@ -1507,7 +1512,7 @@ const volWrap = document.getElementById('volWrap');
 // La physique avance toujours par tranches de 1/60s (STEP) quelle que soit
 // la cadence de l'écran (60/120/144Hz) ou la puissance du PC.
 const STEP = 1000 / 60;
-let _lt = 0, _accum = 0;
+let _lt = 0, _accum = 0, _volWrapDisplay = '', _canvasCssWidth = W;
 
 function loop(ts) {
   // ── pas fixes (physique / logique) ──
@@ -1533,7 +1538,8 @@ function loop(ts) {
   _lt = ts;
 
   // ── chaque frame (UI + rendu) ──
-  volWrap.style.display = (state === 'intro1' && intro1Page !== 4) ? 'block' : 'none';
+  const _vwd = (state === 'intro1' && intro1Page !== 4) ? 'block' : 'none';
+  if (_vwd !== _volWrapDisplay) { volWrap.style.display = _vwd; _volWrapDisplay = _vwd; }
   if (state === 'intro1') ensureIntroMusic();
   render();
   requestAnimationFrame(loop);
@@ -1639,10 +1645,6 @@ canvas.addEventListener('mousedown', e => {
 canvas.addEventListener('mouseup',    () => { _sunHoldCancel(); jumpHeld = false; jumpHeldFrame = 0; });
 canvas.addEventListener('mouseleave', () => { _sunHoldCancel(); jumpHeld = false; jumpHeldFrame = 0; });
 
-canvas.addEventListener('click', e => {
-  // garde pour la compatibilité UI (handlePageBtn déjà géré dans mousedown)
-});
-
 canvas.addEventListener('touchstart', e => {
   e.preventDefault();
   const t = e.touches[0];
@@ -1722,6 +1724,7 @@ coinTick   = 0;
 // ─────────────────────────────────────────────
 
 function updateScale() {
+  _canvasCssWidth = canvas.getBoundingClientRect().width || W;
   const mobile = window.matchMedia('(pointer: coarse)').matches;
   if (mobile) {
     const scale = window.innerHeight / H;
