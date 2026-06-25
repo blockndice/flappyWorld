@@ -54,6 +54,7 @@ v0.19.4 = revert physique oiseau
 v0.19.5 = nombre de run affiché
 v0.19.6 = fenêtre swap
 v0.20.0 = review code + correctif nombre de run reset au retour menu
+v0.20.1 = Rework saut de base -> réduction mais facilite le jeu
 
 ** next step **
 idée de level DA -> plage, montagne, automne,
@@ -78,14 +79,16 @@ intro1 → intro2 → countdown → playing → dead → score
 
 physique oiseau (retours joueurs : trop difficile)
 ────────────────────────────────────────────────────────────────────────────
-paramètre      │ avant  │ après  │ rôle
-───────────────┼────────┼────────┼──────────────────────────────────────────
-FLAP_VY        │  -7.2  │  -7.6  │ élan au saut (plus négatif = plus fort)
-FLOAT_FRAMES   │   —    │   14   │ frames de gravity réduite (maintien btn)
-FLOAT_GRAVITY  │   —    │  0.10  │ gravity pendant le float (normal = 0.38)
-GRAVITY        │  0.38  │  0.38  │ inchangé
-PIPE_SPEED     │   2.4  │   2.4  │ inchangé
-PIPE_GAP       │  130   │  130   │ inchangé
+paramètre            │ actuel │  test  │ rôle
+─────────────────────┼────────┼────────┼──────────────────────────────────
+FLAP_VY              │  -7.2  │  -6.5  │ élan au saut (plus négatif = plus fort)
+FLOAT_FRAMES         │   14   │   14   │ frames de gravity réduite (maintien btn)
+FLOAT_GRAVITY        │  0.10  │  0.10  │ gravity pendant le float (normal = 0.38)
+BIRD_SPAWN_Y         │  278   │  260   │ y de départ replay (mi-zone = 260)
+COUNTDOWN_FLAP_EVERY │   37   │   33   │ fréquence auto-saut décompte & intro2
+GRAVITY              │  0.38  │  0.38  │ inchangé
+PIPE_SPEED           │   2.4  │   2.4  │ inchangé
+PIPE_GAP             │  130   │  130   │ inchangé
 
 conseils de réglage :
 float trop long     → baisser FLOAT_FRAMES   (ex: 10)

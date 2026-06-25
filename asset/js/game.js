@@ -8,7 +8,9 @@ const W          = 400;
 const H          = 600;
 const GROUND_H   = 80;
 const GRAVITY       = 0.38;
-const FLAP_VY       = -7.2;
+const FLAP_VY             = -6.5;
+const BIRD_SPAWN_Y        = 260; // y de départ au countdown — mi-hauteur zone de jeu (clamp: 19–501)
+const COUNTDOWN_FLAP_EVERY = 33; // fréquence d'auto-saut pendant le décompte (frames)
 const FLOAT_FRAMES  = 14;   // frames de gravity réduite après un saut (maintien bouton)
 const FLOAT_GRAVITY = 0.10; // gravity appliquée pendant le float
 const GLIDE_TARGET_VY = 0.3;  // vitesse cible descente toupie planeur
@@ -408,7 +410,7 @@ function update() {
       // décrochage : drift de bxDetach vers x=90, auto-flap
       const elapsed = t - INTRO2_T1 - T2;
       bird.x = bxDetach + (90 - bxDetach) * Math.min(elapsed / 120, 1);
-      if (elapsed % 37 === 30) bird.vy = FLAP_VY;
+      if (elapsed % COUNTDOWN_FLAP_EVERY === 30) bird.vy = FLAP_VY;
       bird.vy += GRAVITY;
       bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y + bird.vy, H - GROUND_H - BIRD_H / 2 - 8));
       bird.rot = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
@@ -420,7 +422,7 @@ function update() {
 
   if (state === 'countdown') {
     countdown++;
-    if (countdown % 37 === 0) bird.vy = FLAP_VY;
+    if (countdown % COUNTDOWN_FLAP_EVERY === 0) bird.vy = FLAP_VY;
     bird.vy += GRAVITY;
     bird.y  += bird.vy;
     bird.y   = Math.max(BIRD_H / 2 + 8, Math.min(bird.y, H - GROUND_H - BIRD_H / 2 - 8));
@@ -1290,7 +1292,7 @@ function drawUI() {
     if (intro1Page !== 4) {
       ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.20.0', W/2, H - 14);
+      ctx.fillText('v0.20.1', W/2, H - 14);
     }
   }
 
@@ -1612,7 +1614,7 @@ function handlePageBtn(cx, cy) {
     return true;
   }
   if (state !== 'score' || deadPage !== 3 || deadFrame < 30) return false;
-  if (hitBtn(cx, cy, BTN_YES)) { stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; runCount++; playSound('travelMusic'); return true; }
+  if (hitBtn(cx, cy, BTN_YES)) { stopResumeMusic(); init(); state = 'countdown'; bird.y = BIRD_SPAWN_Y; bird.vy = FLAP_VY; runCount++; playSound('travelMusic'); return true; }
   if (hitBtn(cx, cy, BTN_NO))  { stopResumeMusic(); init(); runCount = 0; playIntroMusic(); return true; }
   return true;
 }
@@ -1655,7 +1657,7 @@ document.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp') {
     e.preventDefault();
     if (state === 'score' && deadPage === 3 && deadFrame >= 30) {
-      stopResumeMusic(); init(); state = 'countdown'; bird.vy = FLAP_VY; runCount++; playSound('travelMusic'); return;
+      stopResumeMusic(); init(); state = 'countdown'; bird.y = BIRD_SPAWN_Y; bird.vy = FLAP_VY; runCount++; playSound('travelMusic'); return;
     }
     if (!e.repeat) { flap(); jumpHeld = true; jumpHeldFrame = 0; }
   }
