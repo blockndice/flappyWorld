@@ -2,6 +2,10 @@
 
 Clone de Flappy Bird entièrement en pixel art, développé en JavaScript vanilla sur Canvas 2D. Aucune dépendance externe.
 
+## Jouable en ligne
+
+Version jouable sur **itch.io** : [https://blockndice.itch.io/flappy-world](https://blockndice.itch.io/flappy-world)
+
 ## Présentation
 
 Le joueur contrôle un oiseau pixel art et doit naviguer entre des tuyaux en évitant les collisions. Des pièces d'or sont placées au centre de chaque ouverture — les collecter fait monter le score.
@@ -79,4 +83,4 @@ PIPE_GAP   = 130    (ouverture entre tuyaux)
 
 ## Statut
 
-Alpha — sprites placeholders, pas de sons, pas de persistence du score entre sessions.
+En développement actif — v0.21.1.
