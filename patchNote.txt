@@ -61,12 +61,15 @@ v0.22.0 = site web
 v0.22.1 = site web -> new design + traduction
 v0.22.2 = site web -> polish terminé
 v0.22.3 = site web -> son ajouté
+v0.23.0 = ajout bouton challenge + clean code
 
 ** next step **
 idée de level DA -> plage, montagne, automne,
 Shop -> 1 page = 1 theme
 profil joueur 
 durant l'intro1, les autres oiseau qui défile sont les profils des autre joueurs avec leur equipement + pseudo
+skin dynamique -> gobelin
+bug record piece
 
 - multijoueur
 - musique sur le site

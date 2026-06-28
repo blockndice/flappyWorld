@@ -34,7 +34,6 @@ const BTN_YES = { x: W/2 - 78, y: POP_CY + 16, w: 70, h: 34 };
 const BTN_NO  = { x: W/2 +  8, y: POP_CY + 16, w: 70, h: 34 };
 
 const MENU_BW = 176, MENU_BH = 36, MENU_BX = W/2 - 88;
-const BTN_BACK_I1   = { x: W/2 - 26, y: H/2 + 112, w: 52, h: 20 };
 const BTN_BACK_SHOP = { x: 16,        y: H - 40,    w: 64, h: 28 };
 const BTN_SHOP_PREV = { x: 136,       y: H - 40,    w: 28, h: 28 };
 const BTN_SHOP_NEXT = { x: 236,       y: H - 40,    w: 28, h: 28 };
@@ -46,9 +45,11 @@ const CONFIRM_CANCEL = { x: W / 2 + 35,  y: H - 72, w: 96, h: 44 };
 const MENU_BTNS = [
   { label: 'Free Run',   action: 'freerun',    x: MENU_BX, y: H/2 - 90, w: MENU_BW, h: MENU_BH },
   { label: 'Historique', action: 'historique', x: MENU_BX, y: H/2 - 42, w: MENU_BW, h: MENU_BH },
-  { label: 'Adventure',  action: 'adventure',  x: MENU_BX, y: H/2 +  6, w: MENU_BW, h: MENU_BH },
-  { label: 'Shop',       action: 'shop',       x: MENU_BX, y: H/2 + 68, w: MENU_BW, h: MENU_BH, icon: true },
+  { label: 'Adventure',  action: 'adventure',  x: MENU_BX, y: H/2 +  6, w: MENU_BW, h: MENU_BH, disabled: true },
+  { label: 'Challenge',  action: 'challenge',  x: MENU_BX, y: H/2 + 54, w: MENU_BW, h: MENU_BH, disabled: true },
+  { label: 'Shop',       action: 'shop',       x: MENU_BX, y: H/2 +102, w: MENU_BW, h: MENU_BH, icon: true },
 ];
+const BTN_BACK_I1 = { x: W/2 - 26, y: MENU_BTNS[MENU_BTNS.length - 1].y + MENU_BH + 8, w: 52, h: 20 };
 
 canvas.width  = W;
 canvas.height = H;
@@ -62,6 +63,7 @@ const SHOP_GRID_X = 13,  SHOP_GRID_Y = 289; // 235 (popY) + 54
 //  STATE
 // ─────────────────────────────────────────────
 let bird, pipes, score, state, frame, groundX, coinTick, countdown, intro2Frame, waitFrame, bgBirds, deadFrame, deadPage, prevTopScore, intro1Page;
+// TODO: indicateur record durant la run (son coinRecord + badge) — prevTopScore encore actif en écran de score
 let _impactX = 0, _impactY = 0, _impactBaseAngle = 0;
 let mouseX = -1, mouseY = -1;
 let topScores = [];
@@ -96,7 +98,7 @@ function init() {
   bgBirds      = [];
   deadFrame    = 0;
   prevTopScore = topScores[0] || 0;
-  intro1Page   = 1;
+  intro1Page       = 1;
   bgClouds     = Array.from({ length: 7 }, () => ({
     x:     Math.random() * W,
     y:     CLOUD_Y_MIN + Math.random() * (CLOUD_Y_MAX - CLOUD_Y_MIN),
@@ -448,7 +450,7 @@ function update() {
       bird.x     += bird.vx;
       bird.scale  = Math.min(2.8, 1 + (deadFrame - 20) * 0.045);
       bird.rot    = Math.min(Math.max(bird.vy * 0.055, -0.45), 1.3);
-      if (bird.y > H + 80) { state = 'score'; deadFrame = 0; }
+      if (bird.y > H + 80) { state = 'score'; deadFrame = 0; jumpEffects.length = 0; }
     }
     jumpTick();
     return;
@@ -501,10 +503,10 @@ function update() {
       const dy = bird.y - p.coinY;
       if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
         p.collected = true;
-        playSound(score === prevTopScore ? 'coinRecord' : 'coin');
         score++;
         totalCoins++;
         localStorage.setItem('fw_coins', totalCoins);
+        playSound('coin');
 
       }
     }
@@ -842,22 +844,6 @@ function drawGemBtn(popY, mxL) {
   ctx.textAlign = 'center';
 }
 
-function drawCoinStack(cx, cy) {
-  const ox = cx - 8;
-  // Couches inférieures (peintre : dessinées avant la pièce du dessus)
-  ctx.fillStyle = '#4a3200';
-  ctx.fillRect(ox, cy + 9, 15, 2);  // ombre basse
-  ctx.fillStyle = '#7a5a0a';
-  ctx.fillRect(ox, cy + 6, 15, 3);  // flanc pièce 3
-  ctx.fillStyle = '#a07c14';
-  ctx.fillRect(ox, cy + 4, 15, 2);  // dessus pièce 3
-  ctx.fillStyle = '#3a2600';
-  ctx.fillRect(ox, cy + 6, 15, 1);  // séparateur sombre
-  ctx.fillStyle = '#8a6810';
-  ctx.fillRect(ox, cy + 3, 15, 3);  // flanc pièce 2
-  // Pièce principale (recouvre le haut des couches)
-  sprCoinUI(cx, cy - 5);
-}
 
 function roundRect(x, y, w, h, r, fill) {
   ctx.beginPath();
@@ -1001,12 +987,13 @@ function drawUI() {
       }
 
     } else if (intro1Page === 2) {
-      roundRect(W/2 - 100, H/2 - 132, 200, 266, 10, 'rgba(0,0,0,0.55)');
+      const _popTop = MENU_BTNS[0].y - 42;
+      roundRect(W/2 - 100, _popTop, 200, BTN_BACK_I1.y + BTN_BACK_I1.h + 2 - _popTop, 10, 'rgba(0,0,0,0.55)');
       ctx.fillStyle = '#ffe033';
       ctx.font = 'bold 18px monospace';
       ctx.fillText('FLAPPY WORLD', W/2, H/2 - 108);
       for (const btn of MENU_BTNS) {
-        const disabled = btn.action === 'adventure';
+        const disabled = !!btn.disabled;
         const hov = !disabled && hitBtn(mouseX, mouseY, btn);
         if (btn.icon) {
           roundRect(btn.x, btn.y, btn.w, btn.h, 7, hov ? 'rgba(255,224,51,0.6)' : 'rgba(255,224,51,0.38)');
@@ -1311,11 +1298,6 @@ function drawUI() {
     ctx.strokeText(score, W/2 + 12, 62);
     ctx.fillStyle = '#ffffff';
     ctx.fillText(score, W/2 + 12, 62);
-    if (score > 0 && score > prevTopScore) {
-      ctx.font = 'bold 13px monospace';
-      ctx.fillStyle = '#ffe033';
-      ctx.fillText('record', W/2 + 12, 76); // 14px sous le score (y=62)
-    }
   }
 
   if (state === 'score') {
@@ -1558,7 +1540,7 @@ function handlePageBtn(cx, cy) {
   if (state === 'intro1' && intro1Page === 2) {
     if (hitBtn(cx, cy, BTN_BACK_I1)) { intro1Page = 1; return true; }
     for (const btn of MENU_BTNS) {
-      if (hitBtn(cx, cy, btn)) {
+      if (!btn.disabled && hitBtn(cx, cy, btn)) {
         if (btn.action === 'freerun')    { stopIntroMusic(); playSound('startRun'); state = 'intro2'; intro2Frame = 0; trailParticles.length = 0; jumpEffects.length = 0; trickEffects.length = 0; loopingFrame = 0; toupieFrame = 0; jumpCount = 0; }
         if (btn.action === 'historique') { intro1Page = 3; }
         if (btn.action === 'shop')       { intro1Page = 4; shopZoom = 2; shopPanY = 54; shopPage = 0; shopView = 'shop'; }
@@ -1570,8 +1552,7 @@ function handlePageBtn(cx, cy) {
   if (state === 'intro1' && intro1Page === 3) { intro1Page = 2; return true; }
   if (state === 'intro1' && intro1Page === 4) {
     // Transformer cx en coords logiques popup sur mobile
-    const _cssW_h = canvas.getBoundingClientRect().width || W;
-    const _ps = Math.min(1, window.innerWidth / _cssW_h);
+    const _ps = Math.min(1, window.innerWidth / _canvasCssWidth);
     if (_ps < 1) { const _pl = Math.floor(W * (1 - _ps) / 2); cx = (cx - _pl) / _ps; }
     // ── vue confirmation ──
     if (shopConfirm && selectedShopItem) {
@@ -1679,7 +1660,13 @@ if (localStorage.getItem('fw_ver') !== SAVE_VER) {
   localStorage.removeItem('fw_shop');
   localStorage.setItem('fw_ver', SAVE_VER);
 }
-topScores  = JSON.parse(localStorage.getItem('fw_top')) ?? [55, 50, 45, 40, 35, 30, 25, 20, 15, 10];
+topScores = JSON.parse(localStorage.getItem('fw_top')) ?? [];
+// Migration : purge des scores démo [55,50,…,10] jamais joués
+if (topScores[0] === 55 && topScores[topScores.length - 1] === 10 &&
+    topScores.every((v, i) => v === [55,50,45,40,35,30,25,20,15,10][i])) {
+  topScores = [];
+  localStorage.removeItem('fw_top');
+}
 
 totalCoins = parseInt(localStorage.getItem('fw_coins')  || '0');
 coinTick   = 0;
@@ -1724,21 +1711,22 @@ coinTick   = 0;
 // ─────────────────────────────────────────────
 
 function updateScale() {
-  _canvasCssWidth = canvas.getBoundingClientRect().width || W;
   const mobile = window.matchMedia('(pointer: coarse)').matches;
+  let scale;
   if (mobile) {
-    const scale = window.innerHeight / H;
+    scale = window.innerHeight / H;
     canvas.style.width           = `${W}px`;
     canvas.style.height          = `${H}px`;
     canvas.style.transform       = `scale(${scale})`;
     canvas.style.transformOrigin = 'center center';
   } else {
+    scale = Math.min(window.innerWidth / W, window.innerHeight / H);
     canvas.style.transform       = '';
     canvas.style.transformOrigin = '';
-    const scale = Math.min(window.innerWidth / W, window.innerHeight / H);
     canvas.style.width  = `${W * scale}px`;
     canvas.style.height = `${H * scale}px`;
   }
+  _canvasCssWidth = W * scale;
 }
 window.addEventListener('resize', updateScale);
 window.addEventListener('orientationchange', () => setTimeout(updateScale, 200));
