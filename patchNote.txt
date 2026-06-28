@@ -57,12 +57,20 @@ v0.20.0 = review code + correctif nombre de run reset au retour menu
 v0.20.1 = Rework saut de base -> réduction mais facilite le jeu
 v0.21.0 = review code + demo itch.io
 v0.21.1 = update readME.md
+v0.22.0 = site web 
 
 ** next step **
 idée de level DA -> plage, montagne, automne,
 Shop -> 1 page = 1 theme
 profil joueur 
 durant l'intro1, les autres oiseau qui défile sont les profils des autre joueurs avec leur equipement + pseudo
+
+- multijoueur
+- musique sur le site
+- token simple tresorie, reward, team
+- 1 mois de délai
+- revoir image, nom du jeu
+- inclure patchnote dans readME.md
 
 boutique -> échange pièce collecter contre 
 - swap token
