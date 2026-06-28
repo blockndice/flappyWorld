@@ -83,4 +83,4 @@ PIPE_GAP   = 130    (ouverture entre tuyaux)
 
 ## Statut
 
-En développement actif — v0.22.0.
+En développement actif — v0.22.1.

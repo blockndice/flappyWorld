@@ -1,17 +1,18 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Flappy World</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/6.11.1/css/flag-icons.min.css">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: #1a6fa0;
-      overflow: hidden;
-      height: 100dvh;
+      min-height: 100dvh;
+      overflow-x: hidden;
     }
 
     #bg {
@@ -19,135 +20,346 @@
       inset: 0;
       width: 100%;
       height: 100%;
+      z-index: 0;
     }
 
+    /* ── Page layout ── */
     .page {
       position: relative;
       z-index: 10;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100dvh;
-      padding: 32px 20px;
-      text-align: center;
-      gap: 0;
+      padding: 40px 32px;
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      gap: 64px;
+      max-width: 980px;
+      width: 100%;
+    }
+
+    /* ── Left column ── */
+    .hero-left {
+      flex: 1;
+      min-width: 0;
     }
 
     .title {
-      font-size: clamp(3.8rem, 11vw, 7.5rem);
+      font-size: clamp(3rem, 9vw, 6.5rem);
       font-weight: 900;
       font-family: 'Arial Black', 'Arial Bold', Gadget, sans-serif;
       color: #f5c800;
       text-transform: uppercase;
       letter-spacing: 0.04em;
-      line-height: 1.05;
-      -webkit-text-stroke: 4px #7a4a00;
-      /* contour simulé sur tous les côtés + ombre décalée bas-droite */
+      line-height: 1.0;
+      -webkit-text-stroke: 3px #7a4a00;
       text-shadow:
-        -3px -3px 0 #7a4a00,
-         3px -3px 0 #7a4a00,
-        -3px  3px 0 #7a4a00,
-         3px  3px 0 #7a4a00,
-         0   -3px 0 #7a4a00,
-         0    3px 0 #7a4a00,
-        -3px  0   0 #7a4a00,
-         3px  0   0 #7a4a00,
-         6px  7px 0 #3e2600;
-      margin-bottom: 14px;
+        -2px -2px 0 #7a4a00,  2px -2px 0 #7a4a00,
+        -2px  2px 0 #7a4a00,  2px  2px 0 #7a4a00,
+         0   -2px 0 #7a4a00,  0    2px 0 #7a4a00,
+        -2px  0   0 #7a4a00,  2px  0   0 #7a4a00,
+         5px  6px 0 #3e2600;
+      margin-bottom: 10px;
     }
 
     .slogan {
-      font-size: clamp(0.85rem, 2vw, 1.1rem);
-      font-weight: 400;
-      color: rgba(255,255,255,0.75);
-      letter-spacing: 0.22em;
-      margin-bottom: 52px;
+      font-size: clamp(0.8rem, 1.8vw, 1rem);
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 0.2em;
+      margin-bottom: 36px;
     }
 
-    .cards {
+    /* ── Feature list ── */
+    .features {
+      list-style: none;
       display: flex;
-      gap: 16px;
-      margin-bottom: 52px;
-      flex-wrap: wrap;
-      justify-content: center;
-      max-width: 720px;
+      flex-direction: column;
+      gap: 0;
+      margin-bottom: 36px;
     }
 
-    .card {
-      background: rgba(255,255,255,0.13);
-      backdrop-filter: blur(12px) saturate(1.4);
-      -webkit-backdrop-filter: blur(12px) saturate(1.4);
-      border: 1px solid rgba(255,255,255,0.22);
-      border-radius: 20px;
-      padding: 24px 20px;
+    .features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
       color: #fff;
-      width: 190px;
-      text-align: center;
-      transition: transform 0.25s, background 0.25s;
     }
 
-    .card:hover {
-      transform: translateY(-4px);
-      background: rgba(255,255,255,0.19);
+    .features li:first-child { border-top: 1px solid rgba(255,255,255,0.1); }
+
+    .feat-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+      margin-top: 1px;
     }
 
-    .card-icon {
-      font-size: 2.2rem;
-      margin-bottom: 12px;
+    .feat-icon.blue   { background: rgba(33,150,243,0.3); }
+    .feat-icon.yellow { background: rgba(245,200,0,0.25); }
+    .feat-icon.green  { background: rgba(76,175,80,0.3);  }
+    .feat-icon.purple { background: rgba(156,39,176,0.3); }
+
+    .feat-body strong {
       display: block;
-    }
-
-    .card-title {
       font-size: 0.95rem;
-      font-weight: 800;
-      margin-bottom: 8px;
-      letter-spacing: 0.2px;
+      font-weight: 700;
+      margin-bottom: 2px;
     }
 
-    .card-text {
+    .feat-body span {
       font-size: 0.82rem;
-      opacity: 0.82;
-      line-height: 1.5;
+      opacity: 0.72;
+      line-height: 1.4;
     }
 
+    .feat-tag {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(156,39,176,0.4);
+      color: #e1bee7;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ── CTA ── */
     .cta {
       display: inline-block;
       background: #f5d600;
       color: #1a1a00;
-      font-size: clamp(1.05rem, 2.5vw, 1.3rem);
+      font-size: clamp(0.95rem, 2vw, 1.15rem);
       font-weight: 900;
-      padding: 18px 56px;
+      padding: 16px 48px;
       border-radius: 999px;
       text-decoration: none;
       letter-spacing: 0.3px;
-      box-shadow:
-        0 6px 0 #a07800,
-        0 14px 40px rgba(0,0,0,0.35);
+      box-shadow: 0 5px 0 #a07800, 0 12px 36px rgba(0,0,0,0.35);
       transition: transform 0.1s, box-shadow 0.1s;
-      position: relative;
-      top: 0;
     }
 
-    .cta:hover {
-      transform: translateY(-3px);
-      box-shadow:
-        0 9px 0 #a07800,
-        0 18px 50px rgba(0,0,0,0.4);
+    .cta:hover  { transform: translateY(-3px); box-shadow: 0 8px 0 #a07800, 0 18px 48px rgba(0,0,0,0.4); }
+    .cta:active { transform: translateY(3px);  box-shadow: 0 2px 0 #a07800, 0 6px 18px rgba(0,0,0,0.3);  }
+
+    .title-group {
+      width: fit-content;
+      margin-bottom: 36px;
     }
 
-    .cta:active {
-      transform: translateY(4px);
-      box-shadow:
-        0 2px 0 #a07800,
-        0 6px 20px rgba(0,0,0,0.3);
+    .title-group .title { margin-bottom: 10px; }
+
+    .title-group .slogan {
+      margin-bottom: 0;
+      text-align: center;
+    }
+
+    .cta-wrap {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .badge {
-      margin-top: 18px;
-      font-size: 0.78rem;
-      color: rgba(255,255,255,0.88);
-      letter-spacing: 0.5px;
+      margin-top: 14px;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.75);
+      letter-spacing: 0.4px;
+    }
+
+    /* ── Right column — phone + carousel ── */
+    .hero-right { flex-shrink: 0; }
+
+    .phone-wrap {
+      position: relative;
+      width: 220px;
+    }
+
+    .phone-frame {
+      background: #0a0f1a;
+      border-radius: 32px;
+      border: 3px solid rgba(255,255,255,0.18);
+      box-shadow:
+        0 30px 70px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(255,255,255,0.06),
+        inset 0 0 0 1px rgba(0,0,0,0.4);
+      overflow: hidden;
+    }
+
+    .phone-notch {
+      height: 14px;
+      background: #0a0f1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .phone-notch::after {
+      content: '';
+      width: 44px;
+      height: 4px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 2px;
+    }
+
+    .carousel-viewport {
+      overflow: hidden;
+      width: 214px;
+      position: relative;
+    }
+
+    .carousel-track {
+      display: flex;
+      transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .carousel-track img {
+      width: 214px;
+      flex-shrink: 0;
+      display: block;
+      object-fit: cover;
+      aspect-ratio: 400 / 600;
+    }
+
+    .phone-caption {
+      background: #0a0f1a;
+      padding: 8px 0 4px;
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .phone-dots {
+      background: #0a0f1a;
+      padding: 6px 0 10px;
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      border-radius: 0 0 29px 29px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      cursor: pointer;
+      transition: background 0.25s, transform 0.25s;
+    }
+
+    .dot.active {
+      background: #f5c800;
+      transform: scale(1.3);
+    }
+
+    /* carousel arrows */
+    .carr-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.18);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      z-index: 5;
+    }
+
+    .carr-btn:hover { background: rgba(255,255,255,0.32); }
+    .carr-btn.prev  { left: -16px; }
+    .carr-btn.next  { right: -16px; }
+
+    /* ── Language switcher ── */
+    .lang-switcher {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      display: flex;
+      gap: 8px;
+      z-index: 999;
+      animation: slideUp 0.5s ease-out 0.4s both;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(60px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .lang-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.13);
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s, background 0.2s;
+    }
+
+    .lang-btn .fi {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background-size: cover;
+      background-position: center;
+      border-radius: 8px;
+    }
+
+    .lang-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.22); }
+
+    .lang-btn.active {
+      border-color: #f5c800;
+      background: rgba(245,200,0,0.18);
+      box-shadow: 0 0 10px rgba(245,200,0,0.35);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 720px) {
+      .hero {
+        flex-direction: column;
+        gap: 32px;
+        text-align: center;
+        align-items: center;
+      }
+
+      .hero-left { text-align: center; }
+
+      .features li { text-align: left; }
+
+      .phone-wrap { width: 180px; }
+      .carousel-viewport, .carousel-track img { width: 174px; }
+
+      .carr-btn.prev { left: -14px; }
+      .carr-btn.next { right: -14px; }
     }
   </style>
 </head>
@@ -156,52 +368,227 @@
 <canvas id="bg"></canvas>
 
 <div class="page">
-  <h1 class="title">Flappy<br>World</h1>
-  <p class="slogan">play · collect · earn</p>
+  <div class="hero">
 
-  <div class="cards">
-    <div class="card">
-      <span class="card-icon">🐦</span>
-      <div class="card-title">Easy to pick up</div>
-      <div class="card-text">One tap and you fly. Mastery comes with every run.</div>
+    <!-- Left: info -->
+    <div class="hero-left">
+      <div class="title-group">
+        <h1 class="title">Flappy<br>World</h1>
+        <p class="slogan" data-i18n="slogan">play · collect · earn</p>
+      </div>
+
+      <ul class="features">
+        <li>
+          <div class="feat-icon blue">🐦</div>
+          <div class="feat-body">
+            <strong data-i18n="f1-title">Easy to pick up</strong>
+            <span  data-i18n="f1-text">One tap and you fly. Mastery comes with every run.</span>
+          </div>
+        </li>
+        <li>
+          <div class="feat-icon yellow">🎨</div>
+          <div class="feat-body">
+            <strong data-i18n="f2-title">Your bird, your style</strong>
+            <span  data-i18n="f2-text">Collect coins in-game to unlock colors, trails, tricks and sounds.</span>
+          </div>
+        </li>
+        <li>
+          <div class="feat-icon green">🗺️</div>
+          <div class="feat-body">
+            <strong data-i18n="f3-title">Adventure Mode</strong>
+            <span  data-i18n="f3-text">Go further in Adventure mode to unlock better rewards. Limited runs, bigger stakes.</span>
+          </div>
+        </li>
+        <li>
+          <div class="feat-icon purple">⚔️</div>
+          <div class="feat-body">
+            <strong data-i18n="f4-title">Challenge Mode <span class="feat-tag" data-i18n="soon">Soon</span></strong>
+            <span  data-i18n="f4-text">A challenge mode is coming — built on the Solana ecosystem.</span>
+          </div>
+        </li>
+      </ul>
+
+      <div class="cta-wrap">
+        <a class="cta" href="https://blockndice.itch.io/flappy-world" target="_blank" rel="noopener" data-i18n="cta">Demo on itch.io →</a>
+        <span class="badge" data-i18n="badge">Browser · PC &amp; Mobile · No install</span>
+      </div>
     </div>
-    <div class="card">
-      <span class="card-icon">🎨</span>
-      <div class="card-title">Your bird, your style</div>
-      <div class="card-text">Colors, trails, tricks, sounds — unlock everything just by playing.</div>
+
+    <!-- Right: phone + carousel -->
+    <div class="hero-right">
+      <div class="phone-wrap">
+        <button class="carr-btn prev" id="prev">&#8249;</button>
+        <button class="carr-btn next" id="next">&#8250;</button>
+
+        <div class="phone-frame">
+          <div class="phone-notch"></div>
+          <div class="carousel-viewport">
+            <div class="carousel-track" id="track">
+              <img src="asset/img/Screen1.png" alt="Gameplay" />
+              <img src="asset/img/Screen2.png" alt="Shop"     />
+              <img src="asset/img/Screen3.png" alt="Top 10"   />
+              <img src="asset/img/Screen4.png" alt="Title"    />
+            </div>
+          </div>
+          <div class="phone-caption" id="caption">Gameplay</div>
+          <div class="phone-dots" id="dots"></div>
+        </div>
+      </div>
     </div>
-    <div class="card">
-      <span class="card-icon">🏆</span>
-      <div class="card-title">Beat the others</div>
-      <div class="card-text">Personal top 10. Every run is a chance to break your record.</div>
-    </div>
+
   </div>
+</div>
 
-  <a class="cta" href="https://blockndice.itch.io/flappy-world" target="_blank" rel="noopener">
-    Demo on itch.io →
-  </a>
-  <p class="badge">Browser · PC &amp; Mobile · No install</p>
+<!-- Language switcher -->
+<div class="lang-switcher">
+  <button class="lang-btn active" data-lang="en" title="English"><span class="fi fi-gb"></span></button>
+  <button class="lang-btn"        data-lang="fr" title="Français"><span class="fi fi-fr"></span></button>
+  <button class="lang-btn"        data-lang="es" title="Español"><span class="fi fi-es"></span></button>
 </div>
 
 <script>
+// ── Translations ──
+const CAPTIONS = {
+  en: ['Gameplay', 'Shop', 'Top 10', 'Discover'],
+  fr: ['Gameplay', 'Boutique', 'Top 10', 'Découvrir'],
+  es: ['Juego',    'Tienda',   'Top 10', 'Descubrir'],
+};
+
+const T = {
+  en: {
+    slogan:   'play · collect · earn',
+    'f1-title': 'Easy to pick up',
+    'f1-text':  'One tap and you fly. Mastery comes with every run.',
+    'f2-title': 'Your bird, your style',
+    'f2-text':  'Collect coins in-game to unlock colors, trails, tricks and sounds.',
+    'f3-title': 'Adventure Mode',
+    'f3-text':  'Go further in Adventure mode to unlock better rewards. Limited runs, bigger stakes.',
+    'f4-title': 'Challenge Mode',
+    'f4-text':  'A challenge mode is coming — built on the Solana ecosystem.',
+    soon:     'Soon',
+    cta:      'Demo on itch.io →',
+    badge:    'Browser · PC & Mobile · No install',
+  },
+  fr: {
+    slogan:   'joue · récolte · gagne',
+    'f1-title': 'Facile à prendre en main',
+    'f1-text':  'Un tap et tu voles. La finesse vient avec chaque run.',
+    'f2-title': 'Ton oiseau, ton style',
+    'f2-text':  'Récolte des pièces en jeu pour débloquer couleurs, traînées, tricks et sons.',
+    'f3-title': 'Mode Aventure',
+    'f3-text':  'Tente le mode Aventure pour accéder à de meilleures récompenses. Runs limités, enjeux plus grands.',
+    'f4-title': 'Mode Challenge',
+    'f4-text':  'Un mode challenge est en préparation sur l\'écosystème Solana.',
+    soon:     'Bientôt',
+    cta:      'Démo sur itch.io →',
+    badge:    'Navigateur · PC & Mobile · Sans installation',
+  },
+  es: {
+    slogan:   'juega · recoge · gana',
+    'f1-title': 'Fácil de aprender',
+    'f1-text':  'Un toque y vuelas. La maestría llega con cada intento.',
+    'f2-title': 'Tu pájaro, tu estilo',
+    'f2-text':  'Recoge monedas en el juego para desbloquear colores, estelas, trucos y sonidos.',
+    'f3-title': 'Modo Aventura',
+    'f3-text':  'Prueba el modo Aventura para acceder a mejores recompensas. Partidas limitadas, apuestas más altas.',
+    'f4-title': 'Modo Desafío',
+    'f4-text':  'Un modo desafío está en preparación en el ecosistema Solana.',
+    soon:     'Pronto',
+    cta:      'Demo en itch.io →',
+    badge:    'Navegador · PC & Móvil · Sin instalación',
+  },
+};
+
+let currentLang = 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (T[lang]?.[key]) el.textContent = T[lang][key];
+  });
+  document.querySelectorAll('.lang-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.lang === lang)
+  );
+  document.documentElement.lang = lang;
+  localStorage.setItem('fw-lang', lang);
+  updateCaption();
+}
+
+document.querySelectorAll('.lang-btn').forEach(btn =>
+  btn.addEventListener('click', () => setLang(btn.dataset.lang))
+);
+
+// ── Carousel ──
+const track   = document.getElementById('track');
+const dotsEl  = document.getElementById('dots');
+const caption = document.getElementById('caption');
+const TOTAL   = 4;
+let current   = 0;
+let autoTimer;
+
+// build dots
+for (let i = 0; i < TOTAL; i++) {
+  const d = document.createElement('button');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.addEventListener('click', () => goTo(i));
+  dotsEl.appendChild(d);
+}
+
+function updateCaption() {
+  const caps = CAPTIONS[currentLang] || CAPTIONS.en;
+  caption.textContent = caps[current] ?? '';
+}
+
+function goTo(idx) {
+  current = (idx + TOTAL) % TOTAL;
+  const imgW = track.querySelector('img').offsetWidth;
+  track.style.transform = `translateX(-${current * imgW}px)`;
+  dotsEl.querySelectorAll('.dot').forEach((d, i) =>
+    d.classList.toggle('active', i === current)
+  );
+  updateCaption();
+  resetAuto();
+}
+
+function resetAuto() {
+  clearInterval(autoTimer);
+  autoTimer = setInterval(() => goTo(current + 1), 3500);
+}
+
+document.getElementById('prev').addEventListener('click', () => goTo(current - 1));
+document.getElementById('next').addEventListener('click', () => goTo(current + 1));
+
+// touch swipe
+let touchX = 0;
+track.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+track.addEventListener('touchend',   e => {
+  const dx = e.changedTouches[0].clientX - touchX;
+  if (Math.abs(dx) > 40) goTo(current + (dx < 0 ? 1 : -1));
+});
+
+resetAuto();
+setLang(localStorage.getItem('fw-lang') || 'en');
+
+// ── Canvas background ──
 const canvas = document.getElementById('bg');
 const ctx    = canvas.getContext('2d');
 
-const GRAVITY     = 0.38;
-const FLAP_VY     = -7.22; // équilibre exact : -GRAVITY*(37+1)/2 → drift nul par cycle
-const FLAP_EVERY  = 37;
-const BIRD_W   = 26;
-const BIRD_H   = 22;
+const GRAVITY    = 0.38;
+const FLAP_VY    = -7.22;
+const FLAP_EVERY = 37;
+const BIRD_W     = 26;
+const BIRD_H     = 22;
 
 const BIRD_PALS = [
-  ['#f5d600','#fff3a0','#d4a800'], // jaune
-  ['#4caf50','#a5d6a7','#2e7d32'], // vert
-  ['#f44336','#ffcdd2','#b71c1c'], // rouge
-  ['#e91e63','#f8bbd0','#880e4f'], // rose
-  ['#2196f3','#bbdefb','#0d47a1'], // bleu
-  ['#9c27b0','#e1bee7','#4a148c'], // violet
-  ['#ff8c00','#ffe0b2','#e65100'], // orange
-  ['#ff7043','#ffccbc','#bf360c'], // corail
+  ['#f5d600','#fff3a0','#d4a800'],
+  ['#4caf50','#a5d6a7','#2e7d32'],
+  ['#f44336','#ffcdd2','#b71c1c'],
+  ['#e91e63','#f8bbd0','#880e4f'],
+  ['#2196f3','#bbdefb','#0d47a1'],
+  ['#9c27b0','#e1bee7','#4a148c'],
+  ['#ff8c00','#ffe0b2','#e65100'],
+  ['#ff7043','#ffccbc','#bf360c'],
 ];
 
 const CLOUD_SHAPES = [
@@ -211,48 +598,35 @@ const CLOUD_SHAPES = [
   [[1,0],[2,0],[3,0],[0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[2,2],[3,2]],
 ];
 
-let W = 0, H = 0;
-let skyGrad = null;
-let birds   = [];
-let clouds  = [];
-let tick    = 0;
+let W = 0, H = 0, skyGrad = null;
+let birds = [], clouds = [], tick = 0;
 
-// ── resize ──
 function resize() {
   W = canvas.width  = window.innerWidth;
   H = canvas.height = window.innerHeight;
-
   skyGrad = ctx.createLinearGradient(0, 0, 0, H);
-  skyGrad.addColorStop(0,   '#1a6fa0');
-  skyGrad.addColorStop(0.65,'#5ec8f5');
-  skyGrad.addColorStop(1,   '#82dcff');
-
-
+  skyGrad.addColorStop(0,    '#1a6fa0');
+  skyGrad.addColorStop(0.65, '#5ec8f5');
+  skyGrad.addColorStop(1,    '#82dcff');
   clouds = Array.from({ length: 9 }, () => ({
-    x:     Math.random() * W,
-    y:     35 + Math.random() * (H * 0.52),
-    s:     6 + Math.floor(Math.random() * 9),
+    x: Math.random() * W, y: 35 + Math.random() * (H * 0.52),
+    s: 6 + Math.floor(Math.random() * 9),
     shape: CLOUD_SHAPES[Math.floor(Math.random() * CLOUD_SHAPES.length)],
     speed: 0.25 + Math.random() * 0.45,
   }));
 }
 
-// ── spawn bird ──
 function spawnBird(startX) {
   const scale = 0.45 + Math.random() * 1.4;
   birds.push({
-    x:          startX ?? -70,
-    y:          70 + Math.random() * (H * 0.65),
-    vy:         FLAP_VY,
-    scale,
-    speed:      scale * 2.0 + 0.6,
-    pal:        Math.floor(Math.random() * BIRD_PALS.length),
+    x: startX ?? -70, y: 70 + Math.random() * (H * 0.65),
+    vy: FLAP_VY, scale, speed: scale * 2.0 + 0.6,
+    pal: Math.floor(Math.random() * BIRD_PALS.length),
     flapOffset: Math.floor(Math.random() * FLAP_EVERY),
   });
   birds.sort((a, b) => a.scale - b.scale);
 }
 
-// ── draw helpers ──
 function drawCloud(ox, oy, s, shape) {
   ctx.fillStyle = 'rgba(255,255,255,0.78)';
   for (const [cx, cy] of shape) ctx.fillRect(ox + cx * s, oy + cy * s, s, s);
@@ -261,62 +635,41 @@ function drawCloud(ox, oy, s, shape) {
 function drawBird(x, y, rot, scale, pal) {
   const [body, light, dark] = BIRD_PALS[pal];
   ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(scale, scale);
-  ctx.rotate(rot);
-  ctx.fillStyle = body;  ctx.fillRect(-BIRD_W/2,       -BIRD_H/2,       BIRD_W,    BIRD_H);
-  ctx.fillStyle = light; ctx.fillRect(-BIRD_W/2 + 4,    BIRD_H/2 - 8,   BIRD_W-10, 6);
-  ctx.fillStyle = dark;  ctx.fillRect(-BIRD_W/2,         0,              10,        7);
-  ctx.fillStyle = '#ffffff'; ctx.fillRect(3,   -BIRD_H/2+3, 9, 9);
-  ctx.fillStyle = '#111111'; ctx.fillRect(7,   -BIRD_H/2+6, 4, 4);
+  ctx.translate(x, y); ctx.scale(scale, scale); ctx.rotate(rot);
+  ctx.fillStyle = body;      ctx.fillRect(-BIRD_W/2,     -BIRD_H/2,     BIRD_W,    BIRD_H);
+  ctx.fillStyle = light;     ctx.fillRect(-BIRD_W/2 + 4,  BIRD_H/2 - 8, BIRD_W-10, 6);
+  ctx.fillStyle = dark;      ctx.fillRect(-BIRD_W/2,       0,            10,        7);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(3,  -BIRD_H/2+3, 9, 9);
+  ctx.fillStyle = '#111111'; ctx.fillRect(7,  -BIRD_H/2+6, 4, 4);
   ctx.fillStyle = '#ff8800'; ctx.fillRect(BIRD_W/2-2, -3, 9, 5);
   ctx.fillStyle = '#cc6600'; ctx.fillRect(BIRD_W/2-2,  1, 9, 2);
   ctx.restore();
 }
 
-// ── loop ──
 function loop() {
-  // update
   if (Math.random() < 0.014) spawnBird();
-
   for (let i = birds.length - 1; i >= 0; i--) {
     const b = birds[i];
     if ((tick + b.flapOffset) % FLAP_EVERY === 0) b.vy = FLAP_VY;
-    b.vy += GRAVITY;
-    b.y  += b.vy;
-    b.x  += b.speed;
+    b.vy += GRAVITY; b.y += b.vy; b.x += b.speed;
     if (b.x > W + 90) birds.splice(i, 1);
   }
-
   for (const c of clouds) {
     c.x -= c.speed;
-    if (c.x < -(c.s * 7)) {
-      c.x = W + 20;
-      c.y = 35 + Math.random() * (H * 0.52);
-    }
+    if (c.x < -(c.s * 7)) { c.x = W + 20; c.y = 35 + Math.random() * (H * 0.52); }
   }
-
-  // render
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, W, H);
-
+  ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, W, H);
   for (const c of clouds) drawCloud(c.x, c.y, c.s, c.shape);
-
   for (const b of birds) {
-    const rot = Math.min(Math.max(b.vy * 0.055, -0.45), 1.3);
-    drawBird(b.x, b.y, rot, b.scale, b.pal);
+    drawBird(b.x, b.y, Math.min(Math.max(b.vy * 0.055, -0.45), 1.3), b.scale, b.pal);
   }
-
   tick++;
   requestAnimationFrame(loop);
 }
 
 window.addEventListener('resize', resize);
 resize();
-
-// pre-populate birds across the full width
 for (let i = 0; i < 14; i++) spawnBird(Math.random() * W);
-
 loop();
 </script>
 </body>

@@ -58,6 +58,7 @@ v0.20.1 = Rework saut de base -> réduction mais facilite le jeu
 v0.21.0 = review code + demo itch.io
 v0.21.1 = update readME.md
 v0.22.0 = site web 
+v0.22.1 = site web -> new design + traduction
 
 ** next step **
 idée de level DA -> plage, montagne, automne,
