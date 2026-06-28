@@ -156,6 +156,20 @@
   <button class="lang-btn"        data-lang="fr" title="Français"><span class="fi fi-fr"></span></button>
   <button class="lang-btn"        data-lang="es" title="Español"><span class="fi fi-es"></span></button>
 </div>
+
+<!-- Music controls -->
+<audio id="landing-audio" src="asset/sound/intro1Music.mp3" loop preload="auto"></audio>
+<div id="music-ctrl">
+  <button id="music-btn" aria-label="Toggle music">
+    <i class="fa-solid fa-music"></i>
+  </button>
+  <div id="music-vol">
+    <div class="vol-track">
+      <input type="range" id="music-vol-slider" min="0" max="1" step="0.05" value="0.5" aria-label="Music volume" />
+    </div>
+  </div>
+</div>
+
 <script src="asset/js/landing.js"></script>
 </body>
 </html>

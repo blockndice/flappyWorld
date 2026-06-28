@@ -419,6 +419,79 @@ body {
   box-shadow: 0 0 10px rgba(245,200,0,0.35);
 }
 
+/* ── Music controls ── */
+#music-ctrl {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+#music-btn {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #f5c800;
+  color: #111;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+  overflow: visible;
+}
+
+#music-btn:hover { transform: scale(1.08); box-shadow: 0 5px 16px rgba(0,0,0,0.4); }
+
+/* Slash line when muted */
+#music-btn.muted::after {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 70%;
+  background: #e02020;
+  border-radius: 2px;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%) rotate(-45deg);
+  pointer-events: none;
+}
+
+/* Volume slider — desktop only */
+#music-vol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.vol-track {
+  position: relative;
+  width: 28px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#music-vol-slider {
+  position: absolute;
+  width: 80px;
+  left: -26px;
+  top: 29px;
+  transform: rotate(-90deg);
+  transform-origin: center center;
+  cursor: pointer;
+  accent-color: #f5c800;
+}
+
 /* ── Responsive ── */
 @media (max-width: 720px) {
   .page {
@@ -460,6 +533,8 @@ body {
   .carr-btn.next { right: -14px; }
 
   .lang-switcher { bottom: 1rem; right: 1rem; }
+
+  #music-vol { display: none; }
 
   .site-footer {
     position: relative;

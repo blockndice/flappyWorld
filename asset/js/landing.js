@@ -231,3 +231,50 @@ window.addEventListener('resize', resize);
 resize();
 for (let i = 0; i < 14; i++) spawnBird(Math.random() * W);
 loop();
+
+// ── Music ──
+const audio     = document.getElementById('landing-audio');
+const musicBtn  = document.getElementById('music-btn');
+const volSlider = document.getElementById('music-vol-slider');
+
+let musicPlaying = false;
+audio.volume = volSlider ? parseFloat(volSlider.value) : 0.5;
+
+function setMusicState(playing) {
+  musicPlaying = playing;
+  musicBtn.classList.toggle('muted', !playing);
+}
+
+function startMusic() {
+  audio.play().then(() => setMusicState(true)).catch(() => setMusicState(false));
+}
+
+// Tente l'autoplay immédiatement
+startMusic();
+
+// Si le navigateur a bloqué l'autoplay, on attend la première interaction
+function onFirstInteraction() {
+  if (!musicPlaying) startMusic();
+  document.removeEventListener('click',      onFirstInteraction);
+  document.removeEventListener('touchstart', onFirstInteraction);
+  document.removeEventListener('keydown',    onFirstInteraction);
+}
+document.addEventListener('click',      onFirstInteraction);
+document.addEventListener('touchstart', onFirstInteraction, { passive: true });
+document.addEventListener('keydown',    onFirstInteraction);
+
+musicBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (musicPlaying) {
+    audio.pause();
+    setMusicState(false);
+  } else {
+    audio.play().then(() => setMusicState(true));
+  }
+});
+
+if (volSlider) {
+  volSlider.addEventListener('input', () => {
+    audio.volume = parseFloat(volSlider.value);
+  });
+}
