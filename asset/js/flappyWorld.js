@@ -21,6 +21,7 @@ const T = {
     badge:       'Browser · PC & Mobile · No install',
     'more-info': 'More info',
     'play-now':  'Play now',
+    'made-by':   'Built by',
   },
   fr: {
     slogan:   'joue · récolte · gagne',
@@ -37,6 +38,7 @@ const T = {
     badge:       'Navigateur · PC & Mobile · Sans installation',
     'more-info': "Plus d'infos",
     'play-now':  'Joue maintenant',
+    'made-by':   'Développé par',
   },
   es: {
     slogan:   'juega · recoge · gana',
@@ -53,6 +55,7 @@ const T = {
     badge:       'Navegador · PC & Móvil · Sin instalación',
     'more-info': 'Más info',
     'play-now':  'Juega ahora',
+    'made-by':   'Desarrollado por',
   },
 };
 
