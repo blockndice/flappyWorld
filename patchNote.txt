@@ -62,9 +62,10 @@ v0.22.1 = site web -> new design + traduction
 v0.22.2 = site web -> polish terminé
 v0.22.3 = site web -> son ajouté
 v0.23.0 = ajout bouton challenge + clean code
+v0.24.0 = site web -> landing.html renommé en flappyWord.html + icône footer whitepaper + lien itch.io
 
 ** next step **
-idée de level DA -> plage, montagne, automne,
+idée de level DA -> plage, montagne, automne, espace
 Shop -> 1 page = 1 theme
 profil joueur 
 durant l'intro1, les autres oiseau qui défile sont les profils des autre joueurs avec leur equipement + pseudo
