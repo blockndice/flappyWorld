@@ -64,6 +64,7 @@ v0.22.3 = site web -> son ajouté
 v0.23.0 = ajout bouton challenge + clean code
 v0.24.0 = site web -> landing.html deviens flappyWord.html + icône footer whitepaper + lien itch.io
 v0.24.1 = ajout mention blockndice au footer
+v0.25.0 = info shop token + mention blockndice à l'intro
 
 ** next step **
 idée de level DA -> plage, montagne, automne, espace

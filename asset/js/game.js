@@ -40,6 +40,8 @@ const BTN_SHOP_NEXT = { x: 236,       y: H - 40,    w: 28, h: 28 };
 const BTN_SHOP_BUY  = { x: W/2 - 32,  y: 245,       w: 64, h: 28 };
 const BTN_SHOP_GEMS  = { x: W - 100,   y: 248,       w: 88, h: 24 };
 const BTN_TOKEN_SHOP = { x: 10,        y: 244,       w: 75, h: 26 };
+const BTN_FOLLOW_X   = { x: W/2 - 20,  y: 385,       w: 40,  h: 40 };
+const BTN_WHITEPAPER = { x: W/2 - 20,  y: 468,       w: 40,  h: 40 };
 const CONFIRM_BUY    = { x: W / 2 - 131, y: H - 72, w: 96, h: 44 };
 const CONFIRM_CANCEL = { x: W / 2 + 35,  y: H - 72, w: 96, h: 44 };
 const MENU_BTNS = [
@@ -1100,10 +1102,33 @@ function drawUI() {
         ctx.fillText(totalGems, b.x + 70, _midY + 5);
         ctx.textAlign = 'center';
 
-        // contenu token
-        ctx.fillStyle = '#aaaacc';
-        ctx.font = '11px monospace';
-        ctx.fillText('Coming soon', W / 2, popY + 130);
+        // contenu token — phase 3
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#4fc3f7';
+        ctx.font = 'bold 11px monospace';
+        ctx.fillText('— PLANNED FOR PHASE 3 —', W / 2, popY + 100);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = '10px monospace';
+        ctx.fillText('Follow the developer @blockndice', W / 2, popY + 112);
+        ctx.fillText('to get early updates!', W / 2, popY + 126);
+
+        const fxb = BTN_FOLLOW_X;
+        const fxHov = hitBtn(popMX, mouseY, fxb);
+        roundRect(fxb.x, fxb.y, fxb.w, fxb.h, 10, fxHov ? '#444444' : '#222222');
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.fillText('\u{1D54F}', fxb.x + fxb.w / 2, fxb.y + fxb.h / 2 + 7);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = '10px monospace';
+        ctx.fillText('You can also read the Whitepaper', W / 2, fxb.y + fxb.h + 22);
+
+        const wpb = BTN_WHITEPAPER;
+        const wpHov = hitBtn(popMX, mouseY, wpb);
+        roundRect(wpb.x, wpb.y, wpb.w, wpb.h, 10, wpHov ? '#444444' : '#222222');
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '18px sans-serif';
+        ctx.fillText('\u{1F310}', wpb.x + wpb.w / 2, wpb.y + wpb.h / 2 + 7);
 
         ctx.restore();
         // ── FIN POPUP TOKEN ────────────────────────────────────
@@ -1282,9 +1307,15 @@ function drawUI() {
     }
 
     if (intro1Page !== 4) {
-      ctx.fillStyle = '#ffffff';
       ctx.font = '11px monospace';
-      ctx.fillText('v0.22.1', W/2, H - 14);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText("BLOCK'N ", 12, H - 14);
+      ctx.fillStyle = '#f5c800';
+      ctx.fillText('DICE', 12 + ctx.measureText("BLOCK'N ").width, H - 14);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('v0.25.0', W/2, H - 14);
     }
   }
 
@@ -1573,7 +1604,12 @@ function handlePageBtn(cx, cy) {
     }
     // ── navigation shop ↔ token ──
     if (shopView === 'shop' && hitBtn(cx, cy, BTN_SHOP_GEMS)) { shopView = 'token'; selectedShopItem = null; shopConfirm = false; clearPreview(); return true; }
-    if (shopView === 'token') { if (hitBtn(cx, cy, BTN_TOKEN_SHOP)) { shopView = 'shop'; } return true; }
+    if (shopView === 'token') {
+      if (hitBtn(cx, cy, BTN_TOKEN_SHOP))  { shopView = 'shop'; }
+      if (hitBtn(cx, cy, BTN_FOLLOW_X))    { window.open('https://x.com/blockndice', '_blank'); }
+      if (hitBtn(cx, cy, BTN_WHITEPAPER))  { window.open('https://blockndice.github.io/whitePaper/flappyWorld.html', '_blank'); }
+      return true;
+    }
     // ── vue grille ──
     if (hitBtn(cx, cy, BTN_BACK_SHOP)) { intro1Page = 2; shopZoom = 1; shopPanY = 0; selectedShopItem = null; shopConfirm = false; shopView = 'shop'; clearPreview(); return true; }
     if (selectedShopItem && hitBtn(cx, cy, BTN_SHOP_BUY)) {
